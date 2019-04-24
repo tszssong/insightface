@@ -82,13 +82,12 @@ def get_symbol():
     conv_14_dw = Conv(conv_13, num_group=bf*32, num_filter=bf*32, kernel=(3, 3), pad=(1, 1), stride=(1, 1), name="conv_14_dw") # 7/7
     conv_14 = Conv(conv_14_dw, num_filter=bf*32, kernel=(1, 1), pad=(0, 0), stride=(1, 1), name="conv_14") # 7/7
     body = conv_14
-    fc1 = symbol_utils.get_fc1(body, num_classes, fc_type)   #num_class here is 256
-    if config.end2end：
-        fc1_yaw = mx.sym.FullyConnected(data=fc1, num_hidden=num_classes, name='pre_yaw_fc1')
-        fc1_yaw = mx.sym.BatchNorm(data=fc1_yaw, fix_gamma=True, eps=2e-5, momentum=bn_mom, name='yaw_fc1')
-        
-        fc2_yaw = mx.sym.FullyConnected(data=fc1_yaw, num_hidden=num_classes, name='pre_yaw_fc2')
-        fc2_yaw = mx.sym.BatchNorm(data=fc2_yaw, fix_gamma=True, eps=2e-5, momentum=bn_mom, name='yaw_fc2')
-    fc1 = mx.symbol.broadcast_mul(fc1, fc2_yaw)
+    fc1 = symbol_utils.get_fc1(body, num_classes, fc_type)
+    if config.end2end:
+      print("fmobilenet use end2end")
+      fc_yaw1 = mx.symbol.FullyConnected(data=fc1, num_hidden=num_classes, name="pre_fc_yaw1")
+      fc_yaw1 = mx.symbol.BatchNorm(data=fc_yaw1, fix_gamma=True, eps=2e-5, momentum=bn_mom, name="fc_yaw1")
+      fc_yaw2 = mx.symbol.FullyConnected(data=fc_yaw1, num_hidden=num_classes, name="pre_fc_yaw2")
+      fc_yaw2 = mx.symbol.BatchNorm(data=fc_yaw2, fix_gamma=True, eps=2e-5, momentum=bn_mom, name="fc_yaw2")
+      fc1 = mx.symbol.broadcast_mul(fc1, fc_yaw2)
     return fc1
-
