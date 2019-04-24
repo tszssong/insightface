@@ -109,7 +109,7 @@ dataset = edict()
 dataset.emore = edict()
 dataset.emore.dataset = 'emore'
 dataset.emore.dataset_path = '../datasets/faces_emore'
-dataset.emore.num_classes = 85742
+dataset.emore.num_classes = 143474
 dataset.emore.image_shape = (112,112,3)
 dataset.emore.val_targets = ['lfw', 'cfp_fp', 'agedb_30']
 
@@ -188,7 +188,7 @@ default.end_epoch = 10000
 default.lr = 0.1
 default.wd = 0.0005
 default.mom = 0.9
-default.per_batch_size = 128
+default.per_batch_size = 64
 default.ckpt = 3
 default.lr_steps = '100000,160000,220000'
 default.models_root = './models'
