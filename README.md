@@ -9,6 +9,7 @@
 ###### 执行：
     python im2rec_1root2label.py prefix root --list --reccursive
     python face2rec_angle.py prefix.lst
-###### list格式如图,中间以tab作为分隔符  ![](deploy/lst格式.png)  
+###### list格式如下，中间以tab作为分隔符  
+![](deploy/lst格式.png)  
 
 ## 训练  
