@@ -19,6 +19,7 @@
 from __future__ import print_function
 import os
 import sys
+import numpy as np
 
 #curr_path = os.path.abspath(os.path.dirname(__file__))
 #sys.path.append(os.path.join(curr_path, "../python"))
@@ -52,6 +53,7 @@ def read_list(path_in):
                 break
             item = edict()
             item.flag = 0
+            #item.image_path, label, item.bbox, item.landmark, item.aligned = face_preprocess.parse_lst_line(line)
             item.image_path, label, item.bbox, item.landmark, item.aligned = face_preprocess.parse_lst_line(line)
             if not item.aligned and item.landmark is None:
               #print('ignore line', line)
@@ -83,16 +85,14 @@ def read_list(path_in):
 
 def image_encode(args, i, item, q_out):
     oitem = [item.id]
-    #print('flag', item.flag)
-    if os.path.isdir(args.prefix):
-        img_dir = args.prefix
-    else:
-        img_dir = os.path.dirname(args.prefix)
+    img_dir = args.prefix[:-4]
 
     if item.flag==0:
       fullpath = img_dir + '/' + item.image_path
+      infopath = fullpath[:-4] + '.info'
+      info = np.loadtxt(infopath,delimiter=',').astype(np.float32)
+      item.label.extend( [info[0], info[1], info[2]] )
       header = mx.recordio.IRHeader(item.flag, item.label, item.id, 0)
-      #print('write', item.flag, item.id, item.label)
       if item.aligned:
         with open(fullpath, 'rb') as fin:
             img = fin.read()
@@ -106,7 +106,6 @@ def image_encode(args, i, item, q_out):
         q_out.put((i, s, oitem))
     else: 
       header = mx.recordio.IRHeader(item.flag, item.label, item.id, 0)
-      #print('write', item.flag, item.id, item.label)
       s = mx.recordio.pack(header, '')
       q_out.put((i, s, oitem))
 
@@ -207,15 +206,12 @@ if __name__ == '__main__':
             working_dir = args.prefix
         else:
             working_dir = os.path.dirname(args.prefix)
-        print (working_dir)
         prop = face_image.load_property(working_dir)
         image_size = prop.image_size
-        print('image_size', image_size)
         args.image_h = image_size[0]
         args.image_w = image_size[1]
         files = [os.path.join(working_dir, fname) for fname in os.listdir(working_dir)
                     if os.path.isfile(os.path.join(working_dir, fname))]
-        print (files)
         count = 0
         for fname in files:
             if fname.startswith(args.prefix) and fname.endswith('.lst'):
