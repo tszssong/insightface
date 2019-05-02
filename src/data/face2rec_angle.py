@@ -91,7 +91,11 @@ def image_encode(args, i, item, q_out):
       fullpath = img_dir + '/' + item.image_path
       infopath = fullpath[:-4] + '.info'
       info = np.loadtxt(infopath,delimiter=',').astype(np.float32)
-      item.label.extend( [info[0], info[1], info[2]] )
+      if len(info) >=3:
+        item.label.extend( [info[0], info[1], info[2]] )
+      else:
+        item.label.extend( [0,0,0] )
+        print("[ds] %s info error!"%(infopath))
       header = mx.recordio.IRHeader(item.flag, item.label, item.id, 0)
       if item.aligned:
         with open(fullpath, 'rb') as fin:
