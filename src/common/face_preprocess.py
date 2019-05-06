@@ -26,6 +26,17 @@ def parse_lst_line(line):
   return image_path, label, bbox, landmark, aligned
 
 
+def parse_lst_angle(line):
+  vec = line.strip().split("\t")
+  assert len(vec)>=6
+  print(vec)
+  aligned = int(vec[0])
+  image_path = vec[1]
+  label = int(vec[2])
+  pitch = int(vec[3])
+  yaw = int(vec[4])
+  roll = int(vec[5])
+  return image_path, label, pitch, yaw, roll, aligned
 
 
 def read_image(img_path, **kwargs):

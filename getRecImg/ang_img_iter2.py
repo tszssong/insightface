@@ -20,6 +20,8 @@ from mxnet import ndarray as nd
 from mxnet import io
 from mxnet import recordio
 
+import copy
+
 logger = logging.getLogger()
 
 
@@ -86,7 +88,7 @@ class FaceImageIter(io.DataIter):
         self.color_jittering = color_jittering
         self.CJA = mx.image.ColorJitterAug(0.125, 0.125, 0.125)
         self.provide_label = [(label_name, (batch_size,))]
-        #print(self.provide_label[0][1])
+        print(self.provide_label[0][1])
         self.cur = 0
         self.nbatch = 0
         self.is_init = False
@@ -118,19 +120,20 @@ class FaceImageIter(io.DataIter):
               label = header.label
               if not isinstance(label, numbers.Number):
                 label = label[0]
+                angle = label[3]
               print('1',label)
-              return label, img, None, None
+              return label, img, angle, None, None
             else:
               label, fname, bbox, landmark = self.imglist[idx]
-              print('2',label)
+              print('2[ds]:not support yet!',label)
               return label, self.read_image(fname), bbox, landmark
         else:
             s = self.imgrec.read()
             if s is None:
                 raise StopIteration
             header, img = recordio.unpack(s)
-            print('3',header.label)
-            return header.label[0], img, None, None
+            #print('3',header.label)
+            return header.label[0], img, header.label[3], None, None
 
     def brightness_aug(self, src, x):
       alpha = 1.0 + random.uniform(-x, x)
@@ -194,11 +197,14 @@ class FaceImageIter(io.DataIter):
         c, h, w = self.data_shape
         batch_data = nd.empty((batch_size, c, h, w))
         if self.provide_label is not None:
-          batch_label = nd.empty(self.provide_label[0][1])
+          rows = self.provide_label[0][1][0] #batch_size
+          print(rows)
+          batch_label = nd.empty([rows,2])
+          #batch_label = nd.empty([self.provide_label[0][1],2])
         i = 0
         try:
             while i < batch_size:
-                label, s, bbox, landmark = self.next_sample()
+                label, s, angle, bbox, landmark = self.next_sample()
                 _data = self.imdecode(s)
                 if _data.shape[0]!=self.data_shape[1]:
                   _data = mx.image.resize_short(_data, self.data_shape[1])
@@ -241,7 +247,7 @@ class FaceImageIter(io.DataIter):
                 for datum in data:
                     assert i < batch_size, 'Batch size must be multiples of augmenter output length'
                     batch_data[i][:] = self.postprocess_data(datum)
-                    batch_label[i][:] = label
+                    batch_label[i][:] = [label, angle]
                     i += 1
         except StopIteration:
             if i<batch_size:
@@ -311,8 +317,7 @@ class FaceImageIterList(io.DataIter):
 
 if __name__=='__main__':
     print ("read rec2img")
-    #save_dir = '/cloud_data01/StrongRootData/TrainData/mslm_emore_img'
-    save_dir = '//cloud_data01/zhengmeisong/data/celeb2/img'
+    save_dir = '/cloud_data01/zhengmeisong/data/glintv2/data/'
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
 
@@ -320,8 +325,7 @@ if __name__=='__main__':
     train_dataiter = FaceImageIter(
           batch_size           = 1,
           data_shape           = (3, 112, 112),
-          path_imgrec          = '/cloud_data01/zhengmeisong/data/celeb2/celeb2.rec',
-          #path_imgrec          = '/cloud_data01/StrongRootData/TrainData/ms1m_emore/train.rec',
+          path_imgrec          = '/cloud_data01/StrongRootData/TrainData/glintv2_emore_ms1m/train.rec',
           shuffle              = False,
           rand_mirror          = False,
           mean                 = None,
@@ -334,11 +338,13 @@ if __name__=='__main__':
     for i in range(num_of_img):
         batch = train_dataiter.next()
         label = batch.label[0].asnumpy()
+        id_label = label[0][0]
+        angle = label[0][1]
         image = batch.data[0].asnumpy()
-        im = image[0]
+        im = copy.deepcopy(image[0])
         im = im.transpose((1,2,0)).astype(np.uint8)
         im = im[...,::-1]
-        sub_dir = 'class_%06d'%int(label[0])
+        sub_dir = 'class_%06d'%int(id_label)
         if not os.path.exists(save_dir+'/'+sub_dir):
             os.mkdir(save_dir+'/'+sub_dir)
         if sub_dir in labelDict:
@@ -347,6 +353,13 @@ if __name__=='__main__':
             labelDict[sub_dir] = 0
         im_name = 'img_%04d.jpg'%labelDict[sub_dir]
         cv2.imwrite(save_dir+'/'+sub_dir+'/'+im_name, im)
+        img = cv2.imread(save_dir+'/'+sub_dir+'/'+im_name)
+        #cv2.rectangle(img, (10,10), (50,50),(55, 255,155),5)
+        font=cv2.FONT_HERSHEY_SIMPLEX
+        cv2.putText(img, 'label=%d'%(id_label),(10,20), font,0.5,(0,255,255),2)
+        cv2.putText(img, 'yaw%.2f'%(angle),(10,60), font,0.5,(0,255,255),2)
+        cv2.imwrite(save_dir+'/'+sub_dir+'/'+im_name, img)
+
         if i%10000==0:
             print ('%7d of %7d img processed!'%(i,num_of_img))
     print (num_of_img, 'processed')
