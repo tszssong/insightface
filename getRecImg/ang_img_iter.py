@@ -317,8 +317,8 @@ class FaceImageIterList(io.DataIter):
 if __name__=='__main__':
     print ("read rec2img")
     #save_dir = '/cloud_data01/StrongRootData/TrainData/mslm_emore_img'
-    save_dir = '/cloud_data01/zhengmeisong/data/celeb15img/'
-    #save_dir = '/cloud_data01/zhengmeisong/data/celebrity/data/'
+    #save_dir = '/cloud_data01/zhengmeisong/data/celeb15img/'
+    save_dir = '/cloud_data01/zhengmeisong/data/celebrity/data/'
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
 
@@ -326,9 +326,9 @@ if __name__=='__main__':
     train_dataiter = FaceImageIter(
           batch_size           = 1,
           data_shape           = (3, 112, 112),
-          path_imgrec          = '/cloud_data01/zhengmeisong/data/celeb15.rec',
+          #path_imgrec          = '/cloud_data01/zhengmeisong/data/celeb15.rec',
           #path_imgrec          = '/cloud_data01/StrongRootData/TrainData/ms1m_emore/train.rec',
-          #path_imgrec          = '/newdata/liuluoqi/FR/celebrity.rec',
+          path_imgrec          = '/newdata/liuluoqi/FR/celebrity.rec',
           shuffle              = False,
           rand_mirror          = False,
           mean                 = None,
