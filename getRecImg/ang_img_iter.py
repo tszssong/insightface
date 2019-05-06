@@ -132,7 +132,7 @@ class FaceImageIter(io.DataIter):
             if s is None:
                 raise StopIteration
             header, img = recordio.unpack(s)
-            #print('3',header.label)
+#            print('3',header.label)
             return header.label[0], img, header.label[3], None, None
 
     def brightness_aug(self, src, x):
@@ -198,7 +198,6 @@ class FaceImageIter(io.DataIter):
         batch_data = nd.empty((batch_size, c, h, w))
         if self.provide_label is not None:
           rows = self.provide_label[0][1][0] #batch_size
-          print(rows)
           batch_label = nd.empty([rows,2])
           #batch_label = nd.empty([self.provide_label[0][1],2])
         i = 0
@@ -318,8 +317,8 @@ class FaceImageIterList(io.DataIter):
 if __name__=='__main__':
     print ("read rec2img")
     #save_dir = '/cloud_data01/StrongRootData/TrainData/mslm_emore_img'
-    #save_dir = '/cloud_data01/zhengmeisong/data/celeb2/img'
-    save_dir = '/cloud_data01/zhengmeisong/data/celebrity/data/'
+    save_dir = '/cloud_data01/zhengmeisong/data/celeb15img/'
+    #save_dir = '/cloud_data01/zhengmeisong/data/celebrity/data/'
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
 
@@ -327,9 +326,9 @@ if __name__=='__main__':
     train_dataiter = FaceImageIter(
           batch_size           = 1,
           data_shape           = (3, 112, 112),
-          #path_imgrec          = '/cloud_data01/zhengmeisong/data/celeb2/celeb2.rec',
+          path_imgrec          = '/cloud_data01/zhengmeisong/data/celeb15.rec',
           #path_imgrec          = '/cloud_data01/StrongRootData/TrainData/ms1m_emore/train.rec',
-          path_imgrec          = '/newdata/liuluoqi/FR/celebrity.rec',
+          #path_imgrec          = '/newdata/liuluoqi/FR/celebrity.rec',
           shuffle              = False,
           rand_mirror          = False,
           mean                 = None,
@@ -360,8 +359,8 @@ if __name__=='__main__':
         img = cv2.imread(save_dir+'/'+sub_dir+'/'+im_name)
         #cv2.rectangle(img, (10,10), (50,50),(55, 255,155),5)
         font=cv2.FONT_HERSHEY_SIMPLEX
-        cv2.putText(img, 'label=%d'%(id_label),(10,20), font,0.5,(0,255,255),2)
-        cv2.putText(img, 'yaw%.2f'%(angle),(10,60), font,0.5,(0,255,255),2)
+        cv2.putText(img, 'id:%d'%(id_label),(2,20), font,0.7,(0,0,255),2)
+        cv2.putText(img, 'yaw:%.1f'%(angle),(2,90), font,0.6,(0,0,255),2)
         cv2.imwrite(save_dir+'/'+sub_dir+'/'+im_name, img)
 
         if i%10000==0:

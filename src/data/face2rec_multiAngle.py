@@ -85,10 +85,9 @@ def read_list(path_in):
 
 def image_encode(args, i, item, q_out):
     oitem = [item.id]
-    img_dir = args.prefix[:-4]
 
     if item.flag==0:
-      fullpath = img_dir + '/' + item.image_path
+      fullpath = item.image_path
       infopath = fullpath[:-4] + '.info'
       info = np.loadtxt(infopath,delimiter=',').astype(np.float32)
       if len(info) >=3:
