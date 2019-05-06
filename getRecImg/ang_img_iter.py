@@ -366,4 +366,3 @@ if __name__=='__main__':
         if i%10000==0:
             print ('%7d of %7d img processed!'%(i,num_of_img))
     print (num_of_img, 'processed')
-

@@ -109,10 +109,11 @@ dataset = edict()
 
 dataset.emore = edict()
 dataset.emore.dataset = 'emore'
-dataset.emore.dataset_path = '/home/zhengmeisong/TrainData/ms1m_emore/'
+#dataset.emore.dataset_path = '/home/zhengmeisong/TrainData/ms1m_emore/'
+#dataset.emore.num_classes = 85742
+dataset.emore.dataset_path = '/cloud_data01/zhengmeisong/TrainData/glintv2_emore_ms1m/'
 #dataset.emore.dataset_path = '/home/zhengmeisong/glintv2_emore_ms1m/'
-dataset.emore.num_classes = 85742
-#dataset.emore.num_classes = 143474
+dataset.emore.num_classes = 143474
 dataset.emore.image_shape = (112,112,3)
 dataset.emore.val_targets = ['lfw', 'cfp_fp', 'agedb_30']
 
