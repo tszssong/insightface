@@ -316,19 +316,14 @@ class FaceImageIterList(io.DataIter):
 
 if __name__=='__main__':
     print ("read rec2img")
-    #save_dir = '/cloud_data01/StrongRootData/TrainData/mslm_emore_img'
-    #save_dir = '/cloud_data01/zhengmeisong/data/celeb15img/'
-    save_dir = '/cloud_data01/zhengmeisong/data/celebrity/data/'
+    save_dir = '//media/ubuntu/9a42e1da-25d8-4345-a954-4abeadf1bd02/home/ubuntu/song/data/glintv2_demo/data/'
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
-
     
     train_dataiter = FaceImageIter(
           batch_size           = 1,
           data_shape           = (3, 112, 112),
-          #path_imgrec          = '/cloud_data01/zhengmeisong/data/celeb15.rec',
-          #path_imgrec          = '/cloud_data01/StrongRootData/TrainData/ms1m_emore/train.rec',
-          path_imgrec          = '/newdata/liuluoqi/FR/celebrity.rec',
+          path_imgrec          = '/media/ubuntu/9a42e1da-25d8-4345-a954-4abeadf1bd02/home/ubuntu/song/TrainData/glintv2/train.rec',
           shuffle              = False,
           rand_mirror          = False,
           mean                 = None,
@@ -355,9 +350,9 @@ if __name__=='__main__':
         else:
             labelDict[sub_dir] = 0
         im_name = 'img_%04d.jpg'%labelDict[sub_dir]
-        cv2.imwrite(save_dir+'/'+sub_dir+'/'+im_name, im)
-        img = cv2.imread(save_dir+'/'+sub_dir+'/'+im_name)
-        #cv2.rectangle(img, (10,10), (50,50),(55, 255,155),5)
+        # cv2.imwrite(save_dir+'/'+sub_dir+'/'+im_name, im)
+        # img = cv2.imread(save_dir+'/'+sub_dir+'/'+im_name)
+        img = cv2.cvtColor(np.asarray(im), cv2.COLOR_RGB2BGR)
         font=cv2.FONT_HERSHEY_SIMPLEX
         cv2.putText(img, 'id:%d'%(id_label),(2,20), font,0.7,(0,0,255),2)
         cv2.putText(img, 'yaw:%.1f'%(angle),(2,90), font,0.6,(0,0,255),2)
