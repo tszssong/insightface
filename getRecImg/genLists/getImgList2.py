@@ -2,8 +2,8 @@ import glob
 import numpy
 
 import os
-SDPath =  '/newdata/liuluoqi/FR/'
-FDSets = ['celebrity/','xxx']
+SDPath =  '/media/ubuntu/9a42e1da-25d8-4345-a954-4abeadf1bd02/home/ubuntu/song/data/celebrity/'
+FDSets = ['data/','xxx']
 
 fid = open('imgList2.lst','w')
 count=0
@@ -18,7 +18,7 @@ for idx2,imgID in enumerate(GatRoots):
         fid.write('1\t'+imgName+'\t%d\n'%count)
     count=count+1
 
-SDPath =  '/cloud_data01/zhengmeisong/TrainData/insightData/ms1m_emore_img/'
+SDPath =  '/media/ubuntu/9a42e1da-25d8-4345-a954-4abeadf1bd02/home/ubuntu/song/data/ms1m_emore_img/'
 FDSets = ['data/','xxx']
 
 imgSet = FDSets[0]

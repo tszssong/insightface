@@ -1,8 +1,8 @@
 import sys, os
 import numpy as np
 listpath = sys.argv[1]
-widefile = open('./widelist.txt', 'w')
-widedir = open('./widedirlist.txt', 'w')
+widefile = open('./wide'+listpath, 'w')
+widedir = open('./widedir'+listpath, 'w')
 print(listpath)
 imglist = open(listpath, 'r')
 yaw_dict = {}

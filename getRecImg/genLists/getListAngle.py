@@ -2,10 +2,12 @@ import glob
 import numpy
 
 import os
-SDPath =  '/newdata/liuluoqi/FR/'
-FDSets = ['celebrity/','xxx']
-
-fid = open('imgList.lst','w')
+#SDPath =  '/media/ubuntu/9a42e1da-25d8-4345-a954-4abeadf1bd02/home/ubuntu/song/data/ms1m_emore_img/'
+#FDSets = ['data/','xxx']
+#fid = open('ms1m_angle.lst','w')
+SDPath =  '/media/ubuntu/9a42e1da-25d8-4345-a954-4abeadf1bd02/home/ubuntu/song/data/celebrity/'
+FDSets = ['data/','xxx']
+fid = open('elebrity_angle.lst','w')
 count=0
 
 imgSet = FDSets[0]
