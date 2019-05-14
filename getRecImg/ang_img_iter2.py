@@ -108,7 +108,7 @@ class FaceImageIter(io.DataIter):
     def next_sample(self):
         """Helper function for reading in next sample."""
         #set total batch size, for example, 1800, and maximum size for each people, for example 45
-        if self.seq is not None:
+        if self.seq is not None:   #shuffle=True
           while True:
             if self.cur >= len(self.seq):
                 raise StopIteration
@@ -119,10 +119,11 @@ class FaceImageIter(io.DataIter):
               header, img = recordio.unpack(s)
               label = header.label
               if not isinstance(label, numbers.Number):
-                label = label[0]
-                angle = label[3]
-              print('1',label)
-              return label, img, angle, None, None
+                #print('1.1',header.label)
+                return header.label[0], img, header.label[3], None, None
+              else:
+                print('1.2[ds]:not support yet!',label)
+                return label, img, None, None
             else:
               label, fname, bbox, landmark = self.imglist[idx]
               print('2[ds]:not support yet!',label)
@@ -193,7 +194,6 @@ class FaceImageIter(io.DataIter):
         batch_data2 = nd.empty(batch_size)
         if self.provide_label is not None:
           rows = self.provide_label[0][1][0] #batch_size
-          print(rows)
           # batch_label = nd.empty([rows,2])
           batch_label = nd.empty(rows)
         i = 0
@@ -316,16 +316,16 @@ class FaceImageIterList(io.DataIter):
 
 if __name__=='__main__':
     print ("read rec2img")
-    save_dir = '../../../TrainData/glintv2_demo/data/'
+    save_dir = '../../../../TrainData/glintv2_demo/data/'
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
-    show_batchSize = 10
+    show_batchSize = 64
     
     train_dataiter = FaceImageIter(
           batch_size           = show_batchSize,
           data_shape           = (3, 112, 112),
-          path_imgrec          = '../../../TrainData/glintv2/train.rec',
-          shuffle              = False,
+          path_imgrec          = '../../../../TrainData/glintv2_angle/train.rec',
+          shuffle              = True,
           rand_mirror          = False,
           mean                 = None,
           cutoff               = False,
@@ -362,8 +362,9 @@ if __name__=='__main__':
           font=cv2.FONT_HERSHEY_SIMPLEX
           cv2.putText(img, 'id:%d'%(id_label),(2,20), font,0.7,(0,0,255),2)
           cv2.putText(img, 'yaw:%.1f'%(angle[b]),(2,90), font,0.6,(0,0,255),2)
-          cv2.imshow("img",img)
-          cv2.waitKey()
+          cv2.imwrite(save_dir+'/'+sub_dir+'/'+im_name, img)
+#          cv2.imshow("img",img)
+#          cv2.waitKey()
           if i%10000==0:
               print ('%7d of %7d img processed!'%(i,num_of_img))
     print (num_of_img, 'processed')

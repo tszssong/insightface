@@ -229,7 +229,8 @@ def train_net(args):
       _metric = LossValueMetric()
       eval_metrics = [mx.metric.create(_metric)]
     else:
-      from image_iter import FaceImageIter
+      #from image_iter import FaceImageIter
+      from ang_img_iter2 import FaceImageIter
       train_dataiter = FaceImageIter(
           batch_size           = args.batch_size,
           data_shape           = data_shape,
@@ -246,6 +247,127 @@ def train_net(args):
       if config.ce_loss:
         metric2 = LossValueMetric()
         eval_metrics.append( mx.metric.create(metric2) )
+
+    if config.net_name=='fresnet' or config.net_name=='fmobilefacenet':
+      initializer = mx.init.Xavier(rnd_type='gaussian', factor_type="out", magnitude=2) #resnet style
+    else:
+      initializer = mx.init.Xavier(rnd_type='uniform', factor_type="in", magnitude=2)
+    #initializer = mx.init.Xavier(rnd_type='gaussian', factor_type="out", magnitude=2) #resnet style
+    _rescale = 1.0/args.ctx_num
+    opt = optimizer.SGD(learning_rate=args.lr, momentum=args.mom, wd=args.wd, rescale_grad=_rescale)
+    _cb = mx.callback.Speedometer(args.batch_size, args.frequent)
+
+    ver_list = []
+    ver_name_list = []
+    for name in config.val_targets:
+      path = os.path.join(data_dir,name+".bin")
+      if os.path.exists(path):
+        data_set = verification.load_bin(path, image_size)
+        ver_list.append(data_set)
+        ver_name_list.append(name)
+        print('ver', name)
+
+
+
+    def ver_test(nbatch):
+      results = []
+      for i in xrange(len(ver_list)):
+        acc1, std1, acc2, std2, xnorm, embeddings_list = verification.test(ver_list[i], model, args.batch_size, 10, None, None)
+        print('[%s][%d]XNorm: %f' % (ver_name_list[i], nbatch, xnorm))
+        #print('[%s][%d]Accuracy: %1.5f+-%1.5f' % (ver_name_list[i], nbatch, acc1, std1))
+        print('[%s][%d]Accuracy-Flip: %1.5f+-%1.5f' % (ver_name_list[i], nbatch, acc2, std2))
+        results.append(acc2)
+      return results
+
+
+
+    highest_acc = [0.0, 0.0]  #lfw and target
+    #for i in xrange(len(ver_list)):
+    #  highest_acc.append(0.0)
+    global_step = [0]
+    save_step = [0]
+    lr_steps = [int(x) for x in args.lr_steps.split(',')]
+    print('lr_steps', lr_steps)
+    def _batch_callback(param):
+      #global global_step
+      global_step[0]+=1
+      mbatch = global_step[0]
+      for step in lr_steps:
+        if mbatch==step:
+          opt.lr *= 0.1
+          print('lr change to', opt.lr)
+          break
+
+      _cb(param)
+      if mbatch%1000==0:
+        print('lr-batch-epoch:',opt.lr,param.nbatch,param.epoch)
+
+      if mbatch>=0 and mbatch%args.verbose==0:
+        acc_list = ver_test(mbatch)
+        save_step[0]+=1
+        msave = save_step[0]
+        do_save = False
+        is_highest = False
+        if len(acc_list)>0:
+          #lfw_score = acc_list[0]
+          #if lfw_score>highest_acc[0]:
+          #  highest_acc[0] = lfw_score
+          #  if lfw_score>=0.998:
+          #    do_save = True
+          score = sum(acc_list)
+          if acc_list[-1]>=highest_acc[-1]:
+            if acc_list[-1]>highest_acc[-1]:
+              is_highest = True
+            else:
+              if score>=highest_acc[0]:
+                is_highest = True
+                highest_acc[0] = score
+            highest_acc[-1] = acc_list[-1]
+            #if lfw_score>=0.99:
+            #  do_save = True
+        if is_highest:
+          do_save = True
+        if args.ckpt==0:
+          do_save = False
+        elif args.ckpt==2:
+          do_save = True
+        elif args.ckpt==3:
+          msave = 1
+
+        if do_save:
+          print('saving', msave)
+          arg, aux = model.get_params()
+          if config.ckpt_embedding:
+            all_layers = model.symbol.get_internals()
+            _sym = all_layers['fc1_output']
+            _arg = {}
+            for k in arg:
+              if not k.startswith('fc7'):
+                _arg[k] = arg[k]
+            mx.model.save_checkpoint(prefix, msave, _sym, _arg, aux)
+          else:
+            mx.model.save_checkpoint(prefix, msave, model.symbol, arg, aux)
+        print('[%d]Accuracy-Highest: %1.5f'%(mbatch, highest_acc[-1]))
+      if config.max_steps>0 and mbatch>config.max_steps:
+        sys.exit(0)
+
+    epoch_cb = None
+    train_dataiter = mx.io.PrefetchingIter(train_dataiter)
+
+    model.fit(train_dataiter,
+        begin_epoch        = begin_epoch,
+        num_epoch          = 999999,
+        eval_data          = val_dataiter,
+        eval_metric        = eval_metrics,
+        kvstore            = args.kvstore,
+        optimizer          = opt,
+        #optimizer_params   = optimizer_params,
+        initializer        = initializer,
+        arg_params         = arg_params,
+        aux_params         = aux_params,
+        allow_missing      = True,
+        batch_end_callback = _batch_callback,
+        epoch_end_callback = epoch_cb )
 
 def main():
     global args

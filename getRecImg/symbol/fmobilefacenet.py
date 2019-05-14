@@ -50,6 +50,8 @@ def get_symbol():
     num_classes = config.emb_size
     print('in_network', config)
     fc_type = config.net_output
+    all_data = mx.symbol.Variable(name="data")
+    #data = all_data.
     data = mx.symbol.Variable(name="data")
     data = data-127.5
     data = data*0.0078125

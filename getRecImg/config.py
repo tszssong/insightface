@@ -109,7 +109,7 @@ dataset = edict()
 
 dataset.emore = edict()
 dataset.emore.dataset = 'emore'
-dataset.emore.dataset_path = '../../../TrainData/glintv2/'
+dataset.emore.dataset_path = '../../../../TrainData/glintv2_angle'
 #dataset.emore.dataset_path = '/home/zhengmeisong/glintv2_emore_ms1m/'
 dataset.emore.num_classes = 143474
 dataset.emore.image_shape = (112,112,3)
