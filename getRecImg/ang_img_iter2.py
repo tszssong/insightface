@@ -160,13 +160,6 @@ class FaceImageIter(io.DataIter):
       return src
 
     def color_aug(self, img, x):
-      #augs = [self.brightness_aug, self.contrast_aug, self.saturation_aug]
-      #random.shuffle(augs)
-      #for aug in augs:
-      #  #print(img.shape)
-      #  img = aug(img, x)
-      #  #print(img.shape)
-      #return img
       return self.CJA(img)
 
     def mirror_aug(self, img):
@@ -195,12 +188,14 @@ class FaceImageIter(io.DataIter):
         self.nbatch+=1
         batch_size = self.batch_size
         c, h, w = self.data_shape
-        batch_data = nd.empty((batch_size, c, h, w))
+        # batch_data = nd.empty([(batch_size, c, h, w),batch_size])
+        batch_data1 = nd.empty((batch_size, c, h, w))
+        batch_data2 = nd.empty(batch_size)
         if self.provide_label is not None:
           rows = self.provide_label[0][1][0] #batch_size
           print(rows)
-          batch_label = nd.empty([rows,2])
-          #batch_label = nd.empty([self.provide_label[0][1],2])
+          # batch_label = nd.empty([rows,2])
+          batch_label = nd.empty(rows)
         i = 0
         try:
             while i < batch_size:
@@ -246,14 +241,18 @@ class FaceImageIter(io.DataIter):
                     continue
                 for datum in data:
                     assert i < batch_size, 'Batch size must be multiples of augmenter output length'
-                    batch_data[i][:] = self.postprocess_data(datum)
-                    batch_label[i][:] = [label, angle]
+                    # angle = np.array(angle)
+                    # angle = angle[np.newaxis, np.newaxis, np.newaxis]
+                    # angle = nd.array(angle)
+                    batch_data1[i][:] = self.postprocess_data(datum)
+                    batch_data2[i][:] = angle
+                    batch_label[i][:] = label
                     i += 1
         except StopIteration:
             if i<batch_size:
                 raise StopIteration
 
-        return io.DataBatch([batch_data], [batch_label], batch_size - i)
+        return io.DataBatch([batch_data1, batch_data2], [batch_label], batch_size - i)
 
     def check_data_shape(self, data_shape):
         """Checks if the input data shape is valid"""
@@ -317,15 +316,15 @@ class FaceImageIterList(io.DataIter):
 
 if __name__=='__main__':
     print ("read rec2img")
-    save_dir = '/cloud_data01/zhengmeisong/data/glintv2/data/'
+    save_dir = '../../../TrainData/glintv2_demo/data/'
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
-
+    show_batchSize = 10
     
     train_dataiter = FaceImageIter(
-          batch_size           = 1,
+          batch_size           = show_batchSize,
           data_shape           = (3, 112, 112),
-          path_imgrec          = '/cloud_data01/StrongRootData/TrainData/glintv2_emore_ms1m/train.rec',
+          path_imgrec          = '../../../TrainData/glintv2/train.rec',
           shuffle              = False,
           rand_mirror          = False,
           mean                 = None,
@@ -337,30 +336,35 @@ if __name__=='__main__':
     labelDict = {}
     for i in range(num_of_img):
         batch = train_dataiter.next()
-        label = batch.label[0].asnumpy()
-        id_label = label[0][0]
-        angle = label[0][1]
+        print(type(batch))
         image = batch.data[0].asnumpy()
-        im = copy.deepcopy(image[0])
-        im = im.transpose((1,2,0)).astype(np.uint8)
-        im = im[...,::-1]
-        sub_dir = 'class_%06d'%int(id_label)
-        if not os.path.exists(save_dir+'/'+sub_dir):
-            os.mkdir(save_dir+'/'+sub_dir)
-        if sub_dir in labelDict:
-            labelDict[sub_dir] += 1
-        else:
-            labelDict[sub_dir] = 0
-        im_name = 'img_%04d.jpg'%labelDict[sub_dir]
-        cv2.imwrite(save_dir+'/'+sub_dir+'/'+im_name, im)
-        img = cv2.imread(save_dir+'/'+sub_dir+'/'+im_name)
-        #cv2.rectangle(img, (10,10), (50,50),(55, 255,155),5)
-        font=cv2.FONT_HERSHEY_SIMPLEX
-        cv2.putText(img, 'label=%d'%(id_label),(10,20), font,0.5,(0,255,255),2)
-        cv2.putText(img, 'yaw%.2f'%(angle),(10,60), font,0.5,(0,255,255),2)
-        cv2.imwrite(save_dir+'/'+sub_dir+'/'+im_name, img)
+        angle = batch.data[1].asnumpy()
+        print(type(image), type(angle), image.shape, angle.shape)
+        label = batch.label[0].asnumpy()
+        # angle = label[0][1]
+        print( type(label), label.shape)
+        for b in range(show_batchSize):
+          id_label = label[b]
+          print(type(id_label), id_label)
 
-        if i%10000==0:
-            print ('%7d of %7d img processed!'%(i,num_of_img))
+          im = copy.deepcopy(image[b])
+          im = im.transpose((1,2,0)).astype(np.uint8)
+          im = im[...,::-1]
+          sub_dir = 'class_%06d'%int(id_label)
+          if not os.path.exists(save_dir+'/'+sub_dir):
+              os.mkdir(save_dir+'/'+sub_dir)
+          if sub_dir in labelDict:
+              labelDict[sub_dir] += 1
+          else:
+              labelDict[sub_dir] = 0
+          im_name = 'img_%04d.jpg'%labelDict[sub_dir]
+          img = cv2.cvtColor(np.asarray(im), cv2.COLOR_RGB2BGR)
+          font=cv2.FONT_HERSHEY_SIMPLEX
+          cv2.putText(img, 'id:%d'%(id_label),(2,20), font,0.7,(0,0,255),2)
+          cv2.putText(img, 'yaw:%.1f'%(angle[b]),(2,90), font,0.6,(0,0,255),2)
+          cv2.imshow("img",img)
+          cv2.waitKey()
+          if i%10000==0:
+              print ('%7d of %7d img processed!'%(i,num_of_img))
     print (num_of_img, 'processed')
 

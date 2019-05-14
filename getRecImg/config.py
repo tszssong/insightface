@@ -27,6 +27,7 @@ config.data_color = 0
 config.data_images_filter = 0
 config.count_flops = True
 config.memonger = False #not work now
+config.end2end = True
 
 
 # network settings
@@ -53,13 +54,13 @@ network.r50v1.net_unit = 1
 network.d169 = edict()
 network.d169.net_name = 'fdensenet'
 network.d169.num_layers = 169
-network.d169.per_batch_size = 16
+network.d169.per_batch_size = 64
 network.d169.densenet_dropout = 0.0
 
 network.d201 = edict()
 network.d201.net_name = 'fdensenet'
 network.d201.num_layers = 201
-network.d201.per_batch_size = 16
+network.d201.per_batch_size = 64
 network.d201.densenet_dropout = 0.0
 
 network.y1 = edict()
@@ -108,8 +109,9 @@ dataset = edict()
 
 dataset.emore = edict()
 dataset.emore.dataset = 'emore'
-dataset.emore.dataset_path = '/cloud_data01/StrongRootData/TrainData/ms1m_emore'
-dataset.emore.num_classes = 85742
+dataset.emore.dataset_path = '../../../TrainData/glintv2/'
+#dataset.emore.dataset_path = '/home/zhengmeisong/glintv2_emore_ms1m/'
+dataset.emore.num_classes = 143474
 dataset.emore.image_shape = (112,112,3)
 dataset.emore.val_targets = ['lfw', 'cfp_fp', 'agedb_30']
 
@@ -158,7 +160,7 @@ loss.triplet.images_per_identity = 5
 loss.triplet.triplet_alpha = 0.3
 loss.triplet.triplet_bag_size = 7200
 loss.triplet.triplet_max_ap = 0.0
-loss.triplet.per_batch_size = 16
+loss.triplet.per_batch_size = 60
 loss.triplet.lr = 0.05
 
 loss.atriplet = edict()
@@ -167,7 +169,7 @@ loss.atriplet.images_per_identity = 5
 loss.atriplet.triplet_alpha = 0.35
 loss.atriplet.triplet_bag_size = 7200
 loss.atriplet.triplet_max_ap = 0.0
-loss.atriplet.per_batch_size = 16
+loss.atriplet.per_batch_size = 60
 loss.atriplet.lr = 0.05
 
 # default settings
@@ -188,7 +190,7 @@ default.end_epoch = 10000
 default.lr = 0.1
 default.wd = 0.0005
 default.mom = 0.9
-default.per_batch_size = 128
+default.per_batch_size = 64
 default.ckpt = 3
 default.lr_steps = '100000,160000,220000'
 default.models_root = './models'

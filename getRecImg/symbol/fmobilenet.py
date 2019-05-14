@@ -44,6 +44,9 @@ def get_symbol():
     num_classes = config.emb_size
     bn_mom = config.bn_mom
     workspace = config.workspace
+    # all_data = mx.symbol.Variable(name="data") # 224
+    # data = mx.symbol.slice_axis(all_data, axis=0, begin = 0, end = 1, name="data")
+    
     data = mx.symbol.Variable(name="data") # 224
     data = data-127.5
     data = data*0.0078125

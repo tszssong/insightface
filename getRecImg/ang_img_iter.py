@@ -316,14 +316,14 @@ class FaceImageIterList(io.DataIter):
 
 if __name__=='__main__':
     print ("read rec2img")
-    save_dir = '//media/ubuntu/9a42e1da-25d8-4345-a954-4abeadf1bd02/home/ubuntu/song/data/glintv2_demo/data/'
+    save_dir = '../../../TrainData/glintv2_demo/data/'
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
     
     train_dataiter = FaceImageIter(
           batch_size           = 1,
           data_shape           = (3, 112, 112),
-          path_imgrec          = '/media/ubuntu/9a42e1da-25d8-4345-a954-4abeadf1bd02/home/ubuntu/song/TrainData/glintv2/train.rec',
+          path_imgrec          = '../../../TrainData/glintv2/train.rec',
           shuffle              = False,
           rand_mirror          = False,
           mean                 = None,
