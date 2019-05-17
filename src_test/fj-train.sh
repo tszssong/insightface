@@ -1,10 +1,12 @@
 DATA_DIR=/cloud_data01/zhengmeisong/TrainData/glintv2_emore_ms1m/
+DATA_DIR=/data03/zhengmeisong/TrainData/glintv2_angle/
 
 NETWORK=y6
 JOB=loss4-GDC-128-emore
-MODELDIR="../../models_test"
+MODELDIR='../../model_'`date +'%m_%d'`
+mkdir $MODELDIR
 PREFIX="$MODELDIR/model"
-CUDA_VISIBLE_DEVICES='2,3' python -u train_softmax.py --data-dir $DATA_DIR \
+CUDA_VISIBLE_DEVICES='0,1' python -u train_softmax.py --data-dir $DATA_DIR \
                                                       --network "$NETWORK" \
                                                       --loss-type 4 \
                                                       --margin-m 0.5 --lr 0.1 \
