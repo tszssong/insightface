@@ -45,6 +45,12 @@ def Residual(data, num_block=1, num_out=1, kernel=(3, 3), stride=(1, 1), pad=(1,
     	identity=conv+shortcut
     return identity
         
+def SResidual(data, num_block=1, num_out=1, kernel=(3, 3), stride=(2, 2), pad=(1, 1), num_group=1, name=None, suffix=''):
+    identity=data
+    shortcut=Linear(data=identity, num_filter=num_out, kernel=(1, 1), pad=(0, 0), stride=stride, name='%s%s_conv_proj_s' %(name, suffix))
+    conv=DResidual(data=identity, num_out=num_out, kernel=kernel, stride=stride, pad=pad, num_group=num_group, name=name, suffix='')
+    identity=mx.symbol.ElementWiseSum(*[conv, shortcut], name=('%s_sum' % name)) 
+    return identity
 
 def get_symbol():
     num_classes = config.emb_size
@@ -65,6 +71,28 @@ def get_symbol():
     conv_4 = Residual(conv_34, num_block=blocks[2], num_out=128, kernel=(3, 3), stride=(1, 1), pad=(1, 1), num_group=256, name="res_4")
     conv_45 = DResidual(conv_4, num_out=128, kernel=(3, 3), stride=(2, 2), pad=(1, 1), num_group=512, name="dconv_45")
     conv_5 = Residual(conv_45, num_block=blocks[3], num_out=128, kernel=(3, 3), stride=(1, 1), pad=(1, 1), num_group=256, name="res_5")
+    conv_6_sep = Conv(conv_5, num_filter=512, kernel=(1, 1), pad=(0, 0), stride=(1, 1), name="conv_6sep")
+
+    fc1 = symbol_utils.get_fc1(conv_6_sep, num_classes, fc_type)
+    return fc1
+
+def get_symbol_v6():
+    num_classes = config.emb_size
+    print('in_network', config)
+    fc_type = config.net_output
+    print('start get_symbol_v6')
+    data = mx.symbol.Variable(name="data")
+    data = data-127.5
+    data = data*0.0078125
+    conv_1 = Conv(data, num_filter=64, kernel=(3, 3), pad=(1, 1), stride=(2, 2), name="conv_1")
+    #conv_2 = Conv(conv_1, num_group=64, num_filter=64, kernel=(3, 3), pad=(1, 1), stride=(1, 1), name="conv_2_dw")
+    conv_2 = Residual(conv_1, num_block=2, num_out=64, kernel=(3, 3), stride=(1, 1), pad=(1, 1), num_group=128, name="res_2")
+    conv_23 = SResidual(conv_2, num_out=128, kernel=(3, 3), stride=(2, 2), pad=(1, 1), num_group=256, name="dconv_23")
+    conv_3 = Residual(conv_23, num_block=4, num_out=128, kernel=(3, 3), stride=(1, 1), pad=(1, 1), num_group=256, name="res_3")
+    conv_34 = SResidual(conv_3, num_out=256, kernel=(3, 3), stride=(2, 2), pad=(1, 1), num_group=512, name="dconv_34")
+    conv_4 = Residual(conv_34, num_block=6, num_out=256, kernel=(3, 3), stride=(1, 1), pad=(1, 1), num_group=512, name="res_4")
+    conv_45 = SResidual(conv_4, num_out=256, kernel=(3, 3), stride=(2, 2), pad=(1, 1), num_group=1024, name="dconv_45")
+    conv_5 = Residual(conv_45, num_block=3, num_out=256, kernel=(3, 3), stride=(1, 1), pad=(1, 1), num_group=512, name="res_5")
     conv_6_sep = Conv(conv_5, num_filter=512, kernel=(1, 1), pad=(0, 0), stride=(1, 1), name="conv_6sep")
 
     fc1 = symbol_utils.get_fc1(conv_6_sep, num_classes, fc_type)

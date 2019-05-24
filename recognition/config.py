@@ -73,6 +73,11 @@ network.y2.emb_size = 256
 network.y2.net_output = 'GDC'
 network.y2.net_blocks = [2,8,16,4]
 
+network.y6 = edict()
+network.y6.net_name = 'fmobilefacenet'
+network.y6.emb_size = 128
+network.y6.net_output = 'GNAP'
+
 network.m1 = edict()
 network.m1.net_name = 'fmobilenet'
 network.m1.emb_size = 256
@@ -188,7 +193,7 @@ default.end_epoch = 10000
 default.lr = 0.1
 default.wd = 0.0005
 default.mom = 0.9
-default.per_batch_size = 64
+default.per_batch_size = 4
 default.ckpt = 3
 default.lr_steps = '100000,160000,220000'
 default.models_root = './models'
