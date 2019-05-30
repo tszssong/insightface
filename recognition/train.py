@@ -61,7 +61,10 @@ def parse_args():
 
 
 def get_symbol(args):
-  embedding = eval(config.net_name).get_symbol()
+  if args.network == 'y6':
+    embedding = eval(config.net_name).get_symbol_v6()
+  else:
+    embedding = eval(config.net_name).get_symbol()
   all_label = mx.symbol.Variable('softmax_label')
   gt_label = all_label
   is_softmax = True

@@ -18,7 +18,7 @@ config.net_multiplier = 1.0
 config.val_targets = ['lfw', 'cfp_fp', 'agedb_30']
 config.ce_loss = True
 config.fc7_lr_mult = 1.0
-config.fc7_wd_mult = 1.0
+config.fc7_wd_mult = 10.0
 config.fc7_no_bias = False
 config.max_steps = 0
 config.data_rand_mirror = True
@@ -73,6 +73,11 @@ network.y2.emb_size = 256
 network.y2.net_output = 'GDC'
 network.y2.net_blocks = [2,8,16,4]
 
+network.y6 = edict()
+network.y6.net_name = 'fmobilefacenet'
+network.y6.emb_size = 128
+network.y6.net_output = 'GNAP'
+
 network.m1 = edict()
 network.m1.net_name = 'fmobilenet'
 network.m1.emb_size = 256
@@ -108,7 +113,7 @@ dataset = edict()
 
 dataset.emore = edict()
 dataset.emore.dataset = 'emore'
-dataset.emore.dataset_path = '../datasets/faces_emore'
+dataset.emore.dataset_path = '/home/zhengmeisong/TrainData/glintv2_emore_ms1m'
 dataset.emore.num_classes = 143474
 dataset.emore.image_shape = (112,112,3)
 dataset.emore.val_targets = ['lfw', 'cfp_fp', 'agedb_30']
@@ -186,11 +191,11 @@ default.kvstore = 'device'
 
 default.end_epoch = 10000
 default.lr = 0.1
-default.wd = 0.0005
+default.wd = 0.00004
 default.mom = 0.9
 default.per_batch_size = 64
-default.ckpt = 3
-default.lr_steps = '100000,160000,220000'
+default.ckpt = 2
+default.lr_steps = '500000,800000,1000000'
 default.models_root = './models'
 
 

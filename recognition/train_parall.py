@@ -67,7 +67,12 @@ def parse_args():
 
 
 def get_symbol_embedding():
-  embedding = eval(config.net_name).get_symbol()
+  if args.network == 'y6':
+    embedding = eval(config.net_name).get_symbol_v6()
+  else:
+    embedding = eval(config.net_name).get_symbol()
+
+#  embedding = eval(config.net_name).get_symbol()
   all_label = mx.symbol.Variable('softmax_label')
   #embedding = mx.symbol.BlockGrad(embedding)
   all_label = mx.symbol.BlockGrad(all_label)
