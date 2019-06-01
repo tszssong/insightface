@@ -258,7 +258,7 @@ class FaceImageIter(io.DataIter):
                     assert i < batch_size, 'Batch size must be multiples of augmenter output length'
                     #print(datum.shape)
                     batch_data[i][:] = self.postprocess_data(datum)
-                    batch_yaw[i][:] = [ label[3], ]
+                    batch_yaw[i][:] = label[3] 
                     batch_label[i][:] = label[0]
                     i += 1
         except StopIteration:

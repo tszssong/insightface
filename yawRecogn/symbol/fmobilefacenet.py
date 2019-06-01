@@ -1,11 +1,12 @@
-
+import math
 import sys
 import os
 import mxnet as mx
 import symbol_utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from config import config
-
+def sigmoid(x):
+    return 1./(1. + mx.symbol.exp(-x))
 
 def Act(data, act_type, name):
     #ignore param act_type, set it in this function 
@@ -108,7 +109,8 @@ def get_symbol_v6():
         #y = mx.symbol.reshape(yaw, shape=(64,1))
         #y = mx.symbol.expand_dims(data=yaw, axis=1)
         #yy = mx.symbol.broadcast_to(data=y, shape=(64,128))
-        fc1 = body + mx.sym.broadcast_mul(yaw, fc_dr2)
+        coef_yaw = sigmoid(10.0*(mx.symbol.abs(yaw)/45.0-1))
+        fc1 = body + mx.sym.broadcast_mul(coef_yaw, fc_dr2)
 
     return fc1
 
