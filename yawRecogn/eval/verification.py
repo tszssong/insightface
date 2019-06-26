@@ -229,18 +229,6 @@ def test(data_set, mx_model, batch_size, nfolds=10, data_extra = None, label_sha
         db = mx.io.DataBatch(data=(_data,_data_extra), label=(_label,))
       model.forward(db, is_train=False)
       net_out = model.get_outputs()
-      #_arg, _aux = model.get_params()
-      #__arg = {}
-      #for k,v in _arg.iteritems():
-      #  __arg[k] = v.as_in_context(_ctx)
-      #_arg = __arg
-      #_arg["data"] = _data.as_in_context(_ctx)
-      #_arg["softmax_label"] = _label.as_in_context(_ctx)
-      #for k,v in _arg.iteritems():
-      #  print(k,v.context)
-      #exe = sym.bind(_ctx, _arg ,args_grad=None, grad_req="null", aux_states=_aux)
-      #exe.forward(is_train=False)
-      #net_out = exe.outputs
       _embeddings = net_out[0].asnumpy()
       time_now = datetime.datetime.now()
       diff = time_now - time0

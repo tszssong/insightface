@@ -155,7 +155,7 @@ def evaluate(embeddings, actual_issame, nrof_folds=10, pca = 0):
     return tpr, fpr, accuracy, val, val_std, far
 
 def load_bin(path, image_size):
-  bins, issame_list = pickle.load(open(path, 'rb'))
+  bins, yaw_list, issame_list = pickle.load(open(path, 'rb'))
   print(len(bins), len(issame_list))
   data_list = []
   for flip in [0,1]:
@@ -185,7 +185,7 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='do verification')
   parser.add_argument('--data-dir', default='/home/ubuntu/zms/TrainData/glintv2_emore_ms1m/', help='')
   parser.add_argument('--model', default='../model/softmax,50', help='path to load model.')
-  parser.add_argument('--target', default='lfw, agedb_30,cfp_fp', help='test targets.')
+  parser.add_argument('--target', default='cfp_fp_yaw, agedb_30,cfp_fp', help='test targets.')
   parser.add_argument('--gpu', default=0, type=int, help='gpu id')
   parser.add_argument('--batch-size', default=32, type=int, help='')
   parser.add_argument('--max', default='', type=str, help='')
