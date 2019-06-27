@@ -180,7 +180,7 @@ def evaluate(embeddings, actual_issame, nrof_folds=10, pca = 0):
     return tpr, fpr, accuracy, val, val_std, far
 
 def load_bin(path, image_size):
-  bins, issame_list = pickle.load(open(path, 'rb'))
+  bins, yaw_list, issame_list = pickle.load(open(path, 'rb'))
   data_list = []
   for flip in [0,1]:
     data = nd.empty((len(issame_list)*2, 3, image_size[0], image_size[1]))
@@ -198,16 +198,19 @@ def load_bin(path, image_size):
     if i%1000==0:
       print('loading bin', i)
   print(data_list[0].shape)
-  return (data_list, issame_list)
+  return (data_list, issame_list, yaw_list)
 
 def test(data_set, mx_model, batch_size, nfolds=10, data_extra = None, label_shape = None):
   print('testing verification..')
   data_list = data_set[0]
   issame_list = data_set[1]
+  yaw_list = data_set[2]
+  #print(len(data_list), len(issame_list), len(yaw_list))
   model = mx_model
   embeddings_list = []
   if data_extra is not None:
-    _data_extra = nd.array(data_extra)
+    _data_extra = nd.array(yaw_list)
+    #_data_extra = nd.array(data_extra)
   time_consumed = 0.0
   if label_shape is None:
     _label = nd.ones( (batch_size,) )
@@ -221,7 +224,12 @@ def test(data_set, mx_model, batch_size, nfolds=10, data_extra = None, label_sha
       bb = min(ba+batch_size, data.shape[0])
       count = bb-ba
       _data = nd.slice_axis(data, axis=0, begin=bb-batch_size, end=bb)
-      #print(_data.shape, _label.shape)
+      yaw = np.array(yaw_list)
+      yaw = yaw[:, np.newaxis]
+   #   print(data.shape)
+    #  print(yaw.shape)
+      _data_extra = nd.slice_axis(nd.array(yaw), axis=0, begin=bb-batch_size, end=bb)
+      #print(_data.shape, _data_extra.shape, _label.shape)
       time0 = datetime.datetime.now()
       if data_extra is None:
         db = mx.io.DataBatch(data=(_data,), label=(_label,))
@@ -229,18 +237,6 @@ def test(data_set, mx_model, batch_size, nfolds=10, data_extra = None, label_sha
         db = mx.io.DataBatch(data=(_data,_data_extra), label=(_label,))
       model.forward(db, is_train=False)
       net_out = model.get_outputs()
-      #_arg, _aux = model.get_params()
-      #__arg = {}
-      #for k,v in _arg.iteritems():
-      #  __arg[k] = v.as_in_context(_ctx)
-      #_arg = __arg
-      #_arg["data"] = _data.as_in_context(_ctx)
-      #_arg["softmax_label"] = _label.as_in_context(_ctx)
-      #for k,v in _arg.iteritems():
-      #  print(k,v.context)
-      #exe = sym.bind(_ctx, _arg ,args_grad=None, grad_req="null", aux_states=_aux)
-      #exe.forward(is_train=False)
-      #net_out = exe.outputs
       _embeddings = net_out[0].asnumpy()
       time_now = datetime.datetime.now()
       diff = time_now - time0
@@ -267,11 +263,6 @@ def test(data_set, mx_model, batch_size, nfolds=10, data_extra = None, label_sha
   embeddings = sklearn.preprocessing.normalize(embeddings)
   acc1 = 0.0
   std1 = 0.0
-  #_, _, accuracy, val, val_std, far = evaluate(embeddings, issame_list, nrof_folds=10)
-  #acc1, std1 = np.mean(accuracy), np.std(accuracy)
-
-  #print('Validation rate: %2.5f+-%2.5f @ FAR=%2.5f' % (val, val_std, far))
-  #embeddings = np.concatenate(embeddings_list, axis=1)
   embeddings = embeddings_list[0] + embeddings_list[1]
   embeddings = sklearn.preprocessing.normalize(embeddings)
   print(embeddings.shape)
@@ -505,9 +496,9 @@ if __name__ == '__main__':
 
   parser = argparse.ArgumentParser(description='do verification')
   # general
-  parser.add_argument('--data-dir', default='', help='')
-  parser.add_argument('--model', default='../model/softmax,50', help='path to load model.')
-  parser.add_argument('--target', default='lfw,cfp_ff,cfp_fp,agedb_30', help='test targets.')
+  parser.add_argument('--data-dir', default='/cloud_data01/zhengmeisong/TrainData/glintv2_angle/', help='')
+  parser.add_argument('--model', default='../models/y6-arcface-emore/model,200', help='path to load model.')
+  parser.add_argument('--target', default='cfp_fp_yaw', help='test targets.')
   parser.add_argument('--gpu', default=0, type=int, help='gpu id')
   parser.add_argument('--batch-size', default=32, type=int, help='')
   parser.add_argument('--max', default='', type=str, help='')
@@ -515,10 +506,7 @@ if __name__ == '__main__':
   parser.add_argument('--nfolds', default=10, type=int, help='')
   args = parser.parse_args()
   sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'common'))
-  import face_image
-
-  prop = face_image.load_property(args.data_dir)
-  image_size = prop.image_size
+  image_size = (112,112,3)
   print('image_size', image_size)
   ctx = mx.gpu(args.gpu)
   nets = []

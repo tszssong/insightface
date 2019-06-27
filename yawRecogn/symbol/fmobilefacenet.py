@@ -106,9 +106,6 @@ def get_symbol_v6():
         fc_dr1 = mx.sym.BatchNorm(data=fc_dr1, fix_gamma=False, eps=2e-5, momentum=bn_mom, name="bn_fc_dr1")
         fc_dr2 = mx.sym.FullyConnected(data=fc_dr1, num_hidden = num_classes, name = "fc_dr2")
         fc_dr2 = mx.sym.BatchNorm(data=fc_dr2, fix_gamma=False, eps=2e-5, momentum=bn_mom, name="bn_fc_dr2")
-        #y = mx.symbol.reshape(yaw, shape=(64,1))
-        #y = mx.symbol.expand_dims(data=yaw, axis=1)
-        #yy = mx.symbol.broadcast_to(data=y, shape=(64,128))
         coef_yaw = sigmoid(10.0*(mx.symbol.abs(yaw)/45.0-1))
         fc1 = body + mx.sym.broadcast_mul(coef_yaw, fc_dr2)
 
