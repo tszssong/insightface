@@ -17,7 +17,11 @@ import pickle
 from sklearn.decomposition import PCA
 import mxnet as mx
 from mxnet import ndarray as nd
-
+def to_rgb(img):
+  w,h,_ = img.shape
+  ret = np.empty((w,h,3), dtype = np.uint8)
+  ret[:,:,0] = ret[:,:,1] = ret[:,:,2] = img
+  return ret
 
 class LFold:
   def __init__(self, n_splits = 2, shuffle = False):
@@ -155,7 +159,7 @@ def evaluate(embeddings, actual_issame, nrof_folds=10, pca = 0):
     return tpr, fpr, accuracy, val, val_std, far
 
 def load_bin(path, image_size):
-  bins, issame_list = pickle.load(open(path, 'rb'))
+  bins, yaw_list, issame_list = pickle.load(open(path, 'rb'))
   print(len(bins), len(issame_list))
   data_list = []
   for flip in [0,1]:
@@ -185,7 +189,7 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='do verification')
   parser.add_argument('--data-dir', default='/home/ubuntu/zms/TrainData/glintv2_emore_ms1m/', help='')
   parser.add_argument('--model', default='../model/softmax,50', help='path to load model.')
-  parser.add_argument('--target', default='lfw, agedb_30,cfp_fp', help='test targets.')
+  parser.add_argument('--target', default='lfw, ivs', help='test targets.')
   parser.add_argument('--gpu', default=0, type=int, help='gpu id')
   parser.add_argument('--batch-size', default=32, type=int, help='')
   parser.add_argument('--max', default='', type=str, help='')
@@ -202,11 +206,39 @@ if __name__ == '__main__':
   ver_name_list = []
   for name in args.target.split(','):
     path = os.path.join(args.data_dir,name+".bin")
+    savepath = args.data_dir+'/'+name+'/'
+    if not os.path.isdir(savepath):
+      os.makedirs(savepath)
+    listfile = open(savepath+'issame_list.txt', 'w')
     if os.path.exists(path):
       print('loading.. ', name,'from:', path)
-      data_set = load_bin(path, image_size)
-      ver_list.append(data_set)
-      ver_name_list.append(name)
+      # data_set = load_bin(path, image_size)
+      bins, issame_list = pickle.load(open(path, 'rb'))
+      print(len(bins), len(issame_list))
+      data_list = []
+      
+      for i in xrange(len(issame_list)*2):
+        _bin = bins[i]
+        img = mx.image.imdecode(_bin)
+        if img.shape[1]!=image_size[0]:
+          img = mx.image.resize_short(img, image_size[0])
+        img = nd.transpose(img, axes=(2, 0, 1))
+        image = img.asnumpy().transpose((1,2,0)).astype(np.uint8)
+        image = image[...,::-1]
+        print( i, ":", issame_list[int(i/2)] )
+        cv2.imshow("imdecode", image)
+        cv2.waitKey(1)
+        if i%2 == 0:
+          post_name = str(int(i/2)) + '_1.jpg'
+          listfile.write( str(int(i/2)) +' '+str( issame_list[int(i/2)])+'\n' )
+        else:
+          post_name = str(int(i/2)) + '_2.jpg'
+        cv2.imwrite(savepath + post_name, image)
+        if i%1000==0:
+          print('loading bin', i)
+      # ver_list.append(data_set)
+      # ver_name_list.append(name)
+      
 
 
 
