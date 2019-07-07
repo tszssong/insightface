@@ -65,16 +65,25 @@ def cal_roc_save_bad(thresholds, embeddings1, embeddings2, actual_issame, nrof_f
     print('predict_issame', len(predict_issame), predict_issame[355], predict_issame[356])
     print('actual_issame', len(actual_issame), actual_issame[355], actual_issame[356])
     badcase_idx = np.where(predict_issame!=actual_issame)
+    fp = []
+    fn = []
+    
     print(badcase_idx[0])
     print(len(badcase_idx), len(badcase_idx[0]))
     fw = open('./badcase.txt', 'w')
     for idx in range(len(badcase_idx[0])):
+        if(actual_issame[badcase_idx[0][idx]]):
+            fp.append(badcase_idx[0][idx])
+        else:
+            fn.append(badcase_idx[0][idx])
         fw.write('%d - %d\n'%(idx, badcase_idx[0][idx]) )
     fw.close
         
     tpr = np.mean(tprs,0)
     fpr = np.mean(fprs,0)
-    return tpr, fpr, accuracy, badcase_idx[0]
+    print(len(fp), len(fn))
+    print('fp',fp)
+    return tpr, fpr, accuracy, badcase_idx[0], fp, fn
 
 def calculate_accuracy(threshold, dist, actual_issame):
     predict_issame = np.less(dist, threshold)
@@ -140,14 +149,14 @@ def evaluate(embeddings, actual_issame, nrof_folds=10, pca = 0):
     thresholds = np.arange(0, 4, 0.01)
     embeddings1 = embeddings[0::2]
     embeddings2 = embeddings[1::2]
-    tpr, fpr, accuracy, bd_idx = cal_roc_save_bad(thresholds, embeddings1, embeddings2,
+    tpr, fpr, accuracy, bd_idx, fp_idx, fn_idx = cal_roc_save_bad(thresholds, embeddings1, embeddings2,
         np.asarray(actual_issame), nrof_folds=nrof_folds, pca = pca)
     #tpr, fpr, accuracy = calculate_roc(thresholds, embeddings1, embeddings2,
      #   np.asarray(actual_issame), nrof_folds=nrof_folds, pca = pca)
     thresholds = np.arange(0, 4, 0.001)
     val, val_std, far = calculate_val(thresholds, embeddings1, embeddings2,
         np.asarray(actual_issame), 1e-3, nrof_folds=nrof_folds)
-    return tpr, fpr, accuracy, val, val_std, far, bd_idx
+    return tpr, fpr, accuracy, val, val_std, far, bd_idx, fp_idx, fn_idx
 
 def load_bin(path, image_size):
   bins, yaw_list, issame_list = pickle.load(open(path, 'rb'))
@@ -237,15 +246,23 @@ def test(data_set, mx_model, batch_size, nfolds=10, data_extra = None, label_sha
   embeddings = sklearn.preprocessing.normalize(embeddings)
   print(embeddings.shape)
   print('infer time', time_consumed)
-  _, _, accuracy, val, val_std, far, bd_idx = evaluate(embeddings, issame_list, nrof_folds=nfolds)
+  _, _, accuracy, val, val_std, far, bd_idx, fp_idx, fn_idx = evaluate(embeddings, issame_list, nrof_folds=nfolds)
   acc2, std2 = np.mean(accuracy), np.std(accuracy)
-  for idx in bd_idx:
+  for idx in fp_idx:
     print(idx)
     imga = data[idx*2].asnumpy().transpose( (1,2,0) )[...,::-1]
-    filename = './badcases/' + str(idx) + 'a.jpg'
+    filename = './badcases/p' + str(idx) + 'a.jpg'
     cv2.imwrite(filename, imga)
     imgb = data[idx*2+1].asnumpy().transpose( (1,2,0) )[...,::-1]
-    filename = './badcases/' + str(idx) + 'b.jpg'
+    filename = './badcases/p' + str(idx) + 'b.jpg'
+    cv2.imwrite(filename, imgb)
+  for idx in fn_idx:
+    print(idx)
+    imga = data[idx*2].asnumpy().transpose( (1,2,0) )[...,::-1]
+    filename = './badcases/n' + str(idx) + 'a.jpg'
+    cv2.imwrite(filename, imga)
+    imgb = data[idx*2+1].asnumpy().transpose( (1,2,0) )[...,::-1]
+    filename = './badcases/n' + str(idx) + 'b.jpg'
     cv2.imwrite(filename, imgb)
   return acc1, std1, acc2, std2, _xnorm, embeddings_list
 
