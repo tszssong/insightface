@@ -2,9 +2,9 @@
 
 用insightface实现商汤[DREAM](https://github.com/penincillin/DREAM/)  
 
-## 数据处理-解析rec文件  
-    python rec2image.py --include rec_path --output image_path  
-## 数据处理-生成rec文件  
+### 数据处理-解析rec文件  
+    python recognition/data/rec2image.py --include rec_path --output image_path  
+### 数据处理-生成rec文件  
 1.用getRecImg/genLists/getImgList.py生成lst，如果有2个路径用getImgList2.py，多个需另写  
 2.用src/data/face2rec_angle.py 生成带角度信息的rec文件  
 3.用getRecImg/ang_img_iter.py验证生成的rec文件，打印信息里的id2range比真实id少一个（从0开始），根据id解小图，会将label和角度直接打印在图上  
