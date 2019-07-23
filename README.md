@@ -16,4 +16,5 @@
 ###### list格式如下，中间以tab作为分隔符  
 ![](deploy/lst格式.png)  
 
-## 训练  
+### 训练  
+- yawRecogn  
