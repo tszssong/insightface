@@ -1,28 +1,5 @@
 """Helper for evaluation on the Labeled Faces in the Wild dataset 
 """
-
-# MIT License
-# 
-# Copyright (c) 2016 David Sandberg
-# 
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-# 
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-# 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -57,6 +34,63 @@ class LFold:
       return [(indices, indices)]
 
 
+def cal_roc_save_bad(thresholds, embeddings1, embeddings2, actual_issame, nrof_folds=10, pca = 0):
+    assert(embeddings1.shape[0] == embeddings2.shape[0])
+    assert(embeddings1.shape[1] == embeddings2.shape[1])
+    nrof_pairs = min(len(actual_issame), embeddings1.shape[0])
+    nrof_thresholds = len(thresholds)
+    k_fold = LFold(n_splits=nrof_folds, shuffle=False)
+    
+    tprs = np.zeros((nrof_folds,nrof_thresholds))
+    fprs = np.zeros((nrof_folds,nrof_thresholds))
+    accuracy = np.zeros((nrof_folds))
+    indices = np.arange(nrof_pairs)
+    diff = np.subtract(embeddings1, embeddings2)
+    dist = np.sum(np.square(diff),1)
+    
+    for fold_idx, (train_set, test_set) in enumerate(k_fold.split(indices)):
+        print('flod_idx', fold_idx)
+        print('train_set', len(train_set), train_set[0], train_set[1])
+        print('test_set', len(test_set), test_set[0], test_set[1])
+        # Find the best threshold for the fold
+        acc_train = np.zeros((nrof_thresholds))
+        for threshold_idx, threshold in enumerate(thresholds):
+            _, _, acc_train[threshold_idx] = calculate_accuracy(threshold, dist[train_set], actual_issame[train_set])
+        best_threshold_index = np.argmax(acc_train)
+        print('idx', best_threshold_index, 'threshold', thresholds[best_threshold_index])
+        for threshold_idx, threshold in enumerate(thresholds):
+            tprs[fold_idx,threshold_idx], fprs[fold_idx,threshold_idx], _ = calculate_accuracy(threshold, dist[test_set], actual_issame[test_set])
+        _, _, accuracy[fold_idx] = calculate_accuracy(thresholds[best_threshold_index], dist[test_set], actual_issame[test_set])
+    bth = thresholds[best_threshold_index]
+    predict_issame = np.less(dist, bth)
+    print('best th=',bth, 'dict', dict[355], dict[356] )
+    print('predict_issame', len(predict_issame), predict_issame[355], predict_issame[356])
+    print('actual_issame', len(actual_issame), actual_issame[355], actual_issame[356])
+    badcase_idx = np.where(predict_issame!=actual_issame)
+    print(badcase_idx[0])
+    print(len(badcase_idx), len(badcase_idx[0]))
+    fw = open('./badcase.txt', 'w')
+    for idx in range(len(badcase_idx[0])):
+        fw.write('%d - %d\n'%(idx, badcase_idx[0][idx]) )
+    fw.close
+        
+    tpr = np.mean(tprs,0)
+    fpr = np.mean(fprs,0)
+    return tpr, fpr, accuracy
+
+def cal_acc_save_bad(threshold, dist, actual_issame):
+    predict_issame = np.less(dist, threshold)
+    tp = np.sum(np.logical_and(predict_issame, actual_issame))
+    fp = np.sum(np.logical_and(predict_issame, np.logical_not(actual_issame)))
+    tn = np.sum(np.logical_and(np.logical_not(predict_issame), np.logical_not(actual_issame)))
+    fn = np.sum(np.logical_and(np.logical_not(predict_issame), actual_issame))
+  
+    tpr = 0 if (tp+fn==0) else float(tp) / float(tp+fn)
+    fpr = 0 if (fp+tn==0) else float(fp) / float(fp+tn)
+    acc = float(tp+tn)/dist.size
+    return tpr, fpr, acc
+
+
 def calculate_roc(thresholds, embeddings1, embeddings2, actual_issame, nrof_folds=10, pca = 0):
     assert(embeddings1.shape[0] == embeddings2.shape[0])
     assert(embeddings1.shape[1] == embeddings2.shape[1])
@@ -75,8 +109,6 @@ def calculate_roc(thresholds, embeddings1, embeddings2, actual_issame, nrof_fold
       dist = np.sum(np.square(diff),1)
     
     for fold_idx, (train_set, test_set) in enumerate(k_fold.split(indices)):
-        #print('train_set', train_set)
-        #print('test_set', test_set)
         if pca>0:
           print('doing pca on', fold_idx)
           embed1_train = embeddings1[train_set]
@@ -98,13 +130,15 @@ def calculate_roc(thresholds, embeddings1, embeddings2, actual_issame, nrof_fold
         for threshold_idx, threshold in enumerate(thresholds):
             _, _, acc_train[threshold_idx] = calculate_accuracy(threshold, dist[train_set], actual_issame[train_set])
         best_threshold_index = np.argmax(acc_train)
-        #print('threshold', thresholds[best_threshold_index])
+        #print('idx', best_threshold_index, 'threshold', thresholds[best_threshold_index])
         for threshold_idx, threshold in enumerate(thresholds):
             tprs[fold_idx,threshold_idx], fprs[fold_idx,threshold_idx], _ = calculate_accuracy(threshold, dist[test_set], actual_issame[test_set])
         _, _, accuracy[fold_idx] = calculate_accuracy(thresholds[best_threshold_index], dist[test_set], actual_issame[test_set])
           
     tpr = np.mean(tprs,0)
     fpr = np.mean(fprs,0)
+    print('size:', len(tpr), len(fpr), len(accuracy))
+    print(accuracy)
     return tpr, fpr, accuracy
 
 def calculate_accuracy(threshold, dist, actual_issame):
@@ -172,8 +206,10 @@ def evaluate(embeddings, actual_issame, nrof_folds=10, pca = 0):
     thresholds = np.arange(0, 4, 0.01)
     embeddings1 = embeddings[0::2]
     embeddings2 = embeddings[1::2]
-    tpr, fpr, accuracy = calculate_roc(thresholds, embeddings1, embeddings2,
+    tpr, fpr, accuracy = cal_roc_save_bad(thresholds, embeddings1, embeddings2,
         np.asarray(actual_issame), nrof_folds=nrof_folds, pca = pca)
+    #tpr, fpr, accuracy = calculate_roc(thresholds, embeddings1, embeddings2,
+     #   np.asarray(actual_issame), nrof_folds=nrof_folds, pca = pca)
     thresholds = np.arange(0, 4, 0.001)
     val, val_std, far = calculate_val(thresholds, embeddings1, embeddings2,
         np.asarray(actual_issame), 1e-3, nrof_folds=nrof_folds)
@@ -274,11 +310,13 @@ def test(data_set, mx_model, batch_size, nfolds=10, data_extra = None, label_sha
 def test_badcase(data_set, mx_model, batch_size, name='', data_extra = None, label_shape = None):
   print('testing verification badcase..')
   data_list = data_set[0]
+  yaw_list = data_set[2]
   issame_list = data_set[1]
   model = mx_model
   embeddings_list = []
   if data_extra is not None:
-    _data_extra = nd.array(data_extra)
+    _data_extra = nd.array(yaw_list)
+    #_data_extra = nd.array(data_extra)
   time_consumed = 0.0
   if label_shape is None:
     _label = nd.ones( (batch_size,) )
@@ -292,7 +330,10 @@ def test_badcase(data_set, mx_model, batch_size, name='', data_extra = None, lab
       bb = min(ba+batch_size, data.shape[0])
       count = bb-ba
       _data = nd.slice_axis(data, axis=0, begin=bb-batch_size, end=bb)
-      #print(_data.shape, _label.shape)
+      yaw = np.array(yaw_list)
+      yaw = yaw[:, np.newaxis]
+      _data_extra = nd.slice_axis(nd.array(yaw), axis=0, begin=bb-batch_size, end=bb)
+      #print(_data.shape, _data_extra.shape, _label.shape)
       time0 = datetime.datetime.now()
       if data_extra is None:
         db = mx.io.DataBatch(data=(_data,), label=(_label,))
@@ -496,8 +537,8 @@ if __name__ == '__main__':
 
   parser = argparse.ArgumentParser(description='do verification')
   # general
-  parser.add_argument('--data-dir', default='/cloud_data01/zhengmeisong/TrainData/glintv2_angle/', help='')
-  parser.add_argument('--model', default='../models/y6-arcface-emore/model,200', help='path to load model.')
+  parser.add_argument('--data-dir', default='/data03/zhengmeisong/TrainData/glintv2_angle/', help='')
+  parser.add_argument('--model', default='models/y6-softmax-emore/model,200', help='path to load model.')
   parser.add_argument('--target', default='cfp_fp_yaw', help='test targets.')
   parser.add_argument('--gpu', default=0, type=int, help='gpu id')
   parser.add_argument('--batch-size', default=32, type=int, help='')

@@ -116,10 +116,10 @@ dataset = edict()
 
 dataset.emore = edict()
 dataset.emore.dataset = 'emore'
-dataset.emore.dataset_path = '/cloud_data01/zhengmeisong/TrainData/glintv2_angle'
+dataset.emore.dataset_path = '/data03/zhengmeisong/TrainData/glintv2_angle'
 dataset.emore.num_classes = 143474
 dataset.emore.image_shape = (112,112,3)
-dataset.emore.val_targets = ['cfp_fp_yaw']
+dataset.emore.val_targets = ['lfw_yaw', 'cfp_fp_yaw', 'agedb_30_yaw']
 #dataset.emore.val_targets = ['lfw', 'cfp_fp', 'agedb_30']
 
 dataset.retina = edict()

@@ -139,7 +139,7 @@ loss.nsoftmax.loss_m3 = 0.0
 loss.arcface = edict()
 loss.arcface.loss_name = 'margin_softmax'
 loss.arcface.loss_s = 64.0
-loss.arcface.loss_m1 = 1.0
+loss.arcface.loss_m1 = 0.5
 loss.arcface.loss_m2 = 0.5
 loss.arcface.loss_m3 = 0.0
 
@@ -193,7 +193,7 @@ default.end_epoch = 10000
 default.lr = 0.1
 default.wd = 0.00004
 default.mom = 0.9
-default.per_batch_size = 64
+default.per_batch_size = 128
 default.ckpt = 2
 default.lr_steps = '500000,800000,1000000'
 default.models_root = './models'

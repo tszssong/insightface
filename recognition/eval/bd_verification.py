@@ -308,8 +308,9 @@ if __name__ == '__main__':
 
   parser = argparse.ArgumentParser(description='do verification')
   # general
-  parser.add_argument('--data-dir', default='/data03/zhengmeisong/TrainData/glintv2_angle/', help='')
-  parser.add_argument('--model', default='models/y6-arcface-emore/model,20', help='path to load model.')
+  parser.add_argument('--data-dir', default='/data03/zhengmeisong/TrainData/', help='')
+  #parser.add_argument('--data-dir', default='/data03/zhengmeisong/TrainData/glintv2_angle/', help='')
+  parser.add_argument('--model', default='models/y6-arcface-emore/model,178', help='path to load model.')
   parser.add_argument('--target', default='cfp_fp', help='test targets.')
   parser.add_argument('--gpu', default=0, type=int, help='gpu id')
   parser.add_argument('--batch-size', default=32, type=int, help='')

@@ -13,7 +13,8 @@ import sklearn
 import datetime
 import numpy as np
 import cv2
-
+import struct
+from collections import namedtuple
 import mxnet as mx
 from mxnet import ndarray as nd
 #from . import _ndarray_internal as _internal
@@ -25,6 +26,27 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'common'))
 import face_preprocess
 
 logger = logging.getLogger()
+
+_IR_FORMAT = 'IfQQ'
+_IR_SIZE = struct.calcsize(_IR_FORMAT)
+IRHeader = namedtuple('HEADER', ['flag', 'label', 'id', 'id2'])
+def my_unpack(s):
+    header = IRHeader(*struct.unpack(_IR_FORMAT, s[:_IR_SIZE]))
+    s = s[_IR_SIZE:]
+    if header.flag > 0:
+        header = header._replace(label=np.frombuffer(s, np.double, header.flag))
+        #print header.flag
+        s = s[header.flag*8:]
+    return header, s
+
+def my_unpack_float(s):
+    header = IRHeader(*struct.unpack(_IR_FORMAT, s[:_IR_SIZE]))
+    s = s[_IR_SIZE:]
+    if header.flag > 0:
+        header = header._replace(label=np.frombuffer(s, np.float32, header.flag))
+        #print header.flag
+        s = s[header.flag*4:]
+    return header, s
 
 class FaceImageIter(io.DataIter):
 
@@ -44,7 +66,7 @@ class FaceImageIter(io.DataIter):
         path_imgidx = path_imgrec[0:-4]+".idx"
         self.imgrec = recordio.MXIndexedRecordIO(path_imgidx, path_imgrec, 'r')  # pylint: disable=redefined-variable-type
         s = self.imgrec.read_idx(0)
-        header, _ = recordio.unpack(s)
+        header, _ = my_unpack(s)
         assert header.flag>0
         print('header0 label', header.label)
         self.header0 = (int(header.label[0]), int(header.label[1]))
@@ -54,7 +76,7 @@ class FaceImageIter(io.DataIter):
         self.seq_identity = range(int(header.label[0]), int(header.label[1]))
         for identity in self.seq_identity:
           s = self.imgrec.read_idx(identity)
-          header, _ = recordio.unpack(s)
+          header, _ = my_unpack(s)
           a,b = int(header.label[0]), int(header.label[1])
           self.id2range[identity] = (a,b)
 
@@ -198,6 +220,7 @@ class FaceImageIter(io.DataIter):
 
 
     def select_triplets(self):
+      print('triplet_image_iter.py select_triplets')
       self.seq = []
       while len(self.seq)<self.seq_min_size:
         self.time_reset()
@@ -234,19 +257,26 @@ class FaceImageIter(io.DataIter):
           #_label = _batch.label[0].asnumpy()
           #data[ba:bb,:,:,:] = _data
           #label[ba:bb] = _label
-          for i in xrange(ba, bb):
+          batch_count = 0
+          for i in xrange(ba, bb+1000):
+            if batch_count >= batch_size:
+              continue
             #print(ba, bb, self.triplet_cur, i, len(self.triplet_seq))
             _idx = self.triplet_seq[i+self.triplet_cur]
             s = self.imgrec.read_idx(_idx)
-            header, img = recordio.unpack(s)
+            header, img = my_unpack(s)
+            #print("%d"%len(img))
+            if img == '':
+              continue
             img = self.imdecode(img)
-            data[i-ba][:] = self.postprocess_data(img)
+            data[batch_count][:] = self.postprocess_data(img)
             _label = header.label
             if not isinstance(_label, numbers.Number):
               _label = _label[0]
             if label is not None:
-              label[i-ba][:] = _label
+              label[batch_count][:] = _label
             tag.append( ( int(_label), _idx) )
+            batch_count = batch_count+1
             #idx[i] = _idx
 
           db = mx.io.DataBatch(data=(data,))
@@ -309,7 +339,7 @@ class FaceImageIter(io.DataIter):
         for i in xrange(_count):
           idx = self.oseq[i+ba]
           s = self.imgrec.read_idx(idx)
-          header, img = recordio.unpack(s)
+          header, img = my_unpack(s)
           img = self.imdecode(img)
           data[i][:] = self.postprocess_data(img)
           label[i][:] = header.label
@@ -428,7 +458,7 @@ class FaceImageIter(io.DataIter):
         idx = self.seq[self.cur]
         self.cur += 1
         s = self.imgrec.read_idx(idx)
-        header, img = recordio.unpack(s)
+        header, img = my_unpack(s)
         label = header.label
         if not isinstance(label, numbers.Number):
           label = label[0]
