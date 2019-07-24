@@ -1,6 +1,6 @@
 # RetinaFace Face Detector
 ### label格式  
-    box_x box_y box_w box_h lmk_x1 lmk_y1 lmk_visible ... blur  
+    box_x box_y box_w box_h lmk_x1 lmk_y1 lmk_visible1 lmk_x2 lmk_y2 ... blur  
 
 ## Introduction
 
