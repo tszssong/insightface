@@ -11,5 +11,4 @@ CUDA_VISIBLE_DEVICES='0,1,2,3' python -u train_triplet.py --network y6 \
  --lr 0.005 --lr-steps "$LRSTEPS" \
  --version-output GNAP --emb-size 128 \
  --prefix "$PREFIX" --per-batch-size 60 --mom 0.0 \
- --pretrained '../../model_05_24/model,68' 2>&1 | tee ../../log/y6_`date +'%m_%d-%H_%M_%S'`.log
-
+ --pretrained '../../model_05_26/model,178' 2>&1 | tee ../../log/y6_`date +'%m_%d-%H_%M_%S'`.log

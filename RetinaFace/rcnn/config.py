@@ -88,9 +88,6 @@ config.USE_3D = False
 #config.BBOX_MASK_THRESH = 0
 config.COLOR_MODE = 2
 config.COLOR_JITTERING = 0.125
-#config.COLOR_JITTERING = 0
-#config.COLOR_JITTERING = 0.2
-
 
 config.TRAIN = edict()
 
@@ -154,7 +151,6 @@ config.TEST.NMS = 0.3
 config.TEST.SCORE_THRESH = 0.05
 config.TEST.IOU_THRESH = 0.5
 
-
 # network settings
 network = edict()
 
@@ -194,8 +190,8 @@ network.mnet.LANDMARK_LR_MULT = 2.5
 
 network.resnet = edict()
 #network.resnet.pretrained = 'model/ResNet50_v1d'
-#network.resnet.pretrained = 'model/resnet-50'
-network.resnet.pretrained = 'model/resnet-152'
+network.resnet.pretrained = 'model/resnet-50'
+#network.resnet.pretrained = 'model/resnet-152'
 #network.resnet.pretrained = 'model/senet154'
 #network.resnet.pretrained = 'model/densenet161'
 network.resnet.pretrained_epoch = 0
@@ -220,7 +216,6 @@ network.resnet.RPN_ANCHOR_CFG = RAC_RETINA
 network.resnet.USE_DCN = 0
 network.resnet.pretrained = 'model/resnet-50'
 network.resnet.RPN_ANCHOR_CFG = RAC_SSH
-
 
 # dataset settings
 dataset = edict()
@@ -251,16 +246,13 @@ config.FIXED_PARAMS = ['^conv1', '^conv2', '^conv3', '^.*upsampling']
 
 # default network
 default.network = 'resnet'
-default.pretrained = 'model/resnet-152'
-#default.network = 'resnetssh'
+default.pretrained = 'model/resnet-50'
 default.pretrained_epoch = 0
-# default dataset
 default.dataset = 'retinaface'
 default.image_set = 'train'
 default.test_image_set = 'val'
 default.root_path = 'data'
 default.dataset_path = 'data/retinaface'
-# default training
 default.frequent = 20
 default.kvstore = 'device'
 # default e2e
