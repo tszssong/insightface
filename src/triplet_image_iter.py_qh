@@ -13,15 +13,40 @@ import sklearn
 import datetime
 import numpy as np
 import cv2
-
+import struct
+from collections import namedtuple
 import mxnet as mx
 from mxnet import ndarray as nd
+#from . import _ndarray_internal as _internal
+#from mxnet._ndarray_internal import _cvimresize as imresize
+#from ._ndarray_internal import _cvcopyMakeBorder as copyMakeBorder
 from mxnet import io
 from mxnet import recordio
 sys.path.append(os.path.join(os.path.dirname(__file__), 'common'))
 import face_preprocess
 
 logger = logging.getLogger()
+
+_IR_FORMAT = 'IfQQ'
+_IR_SIZE = struct.calcsize(_IR_FORMAT)
+IRHeader = namedtuple('HEADER', ['flag', 'label', 'id', 'id2'])
+def my_unpack(s):
+    header = IRHeader(*struct.unpack(_IR_FORMAT, s[:_IR_SIZE]))
+    s = s[_IR_SIZE:]
+    if header.flag > 0:
+        header = header._replace(label=np.frombuffer(s, np.double, header.flag))
+        #print header.flag
+        s = s[header.flag*8:]
+    return header, s
+
+def my_unpack_float(s):
+    header = IRHeader(*struct.unpack(_IR_FORMAT, s[:_IR_SIZE]))
+    s = s[_IR_SIZE:]
+    if header.flag > 0:
+        header = header._replace(label=np.frombuffer(s, np.float32, header.flag))
+        #print header.flag
+        s = s[header.flag*4:]
+    return header, s
 
 class FaceImageIter(io.DataIter):
 
@@ -41,7 +66,7 @@ class FaceImageIter(io.DataIter):
         path_imgidx = path_imgrec[0:-4]+".idx"
         self.imgrec = recordio.MXIndexedRecordIO(path_imgidx, path_imgrec, 'r')  # pylint: disable=redefined-variable-type
         s = self.imgrec.read_idx(0)
-        header, _ = recordio.unpack(s)
+        header, _ = my_unpack(s)
         assert header.flag>0
         print('header0 label', header.label)
         self.header0 = (int(header.label[0]), int(header.label[1]))
@@ -51,7 +76,7 @@ class FaceImageIter(io.DataIter):
         self.seq_identity = range(int(header.label[0]), int(header.label[1]))
         for identity in self.seq_identity:
           s = self.imgrec.read_idx(identity)
-          header, _ = recordio.unpack(s)
+          header, _ = my_unpack(s)
           a,b = int(header.label[0]), int(header.label[1])
           self.id2range[identity] = (a,b)
 
@@ -146,12 +171,18 @@ class FaceImageIter(io.DataIter):
 
               for pair in xrange(j, nrof_images): # For every possible positive pair.
                   p_idx = emb_start_idx + pair
+                  #self.time_reset()
                   pos_dist_sqr = np.sum(np.square(embeddings[a_idx]-embeddings[p_idx]))
+                  #self.times[4] += self.time_elapsed()
+                  #self.time_reset()
                   neg_dists_sqr[emb_start_idx:emb_start_idx+nrof_images] = np.NaN
                   if self.triplet_max_ap>0.0:
                     if pos_dist_sqr>self.triplet_max_ap:
                       continue
                   all_neg = np.where(np.logical_and(neg_dists_sqr-pos_dist_sqr<self.triplet_alpha, pos_dist_sqr<neg_dists_sqr))[0]  # FaceNet selection
+                  #self.times[5] += self.time_elapsed()
+                  #self.time_reset()
+                  #all_neg = np.where(neg_dists_sqr-pos_dist_sqr<alpha)[0] # VGG Face selecction
                   nrof_random_negs = all_neg.shape[0]
                   if nrof_random_negs>0:
                       rnd_idx = np.random.randint(nrof_random_negs)
@@ -189,20 +220,26 @@ class FaceImageIter(io.DataIter):
 
 
     def select_triplets(self):
+      print('triplet_image_iter.py select_triplets')
       self.seq = []
       while len(self.seq)<self.seq_min_size:
         self.time_reset()
         embeddings = None
         bag_size = self.triplet_bag_size
         batch_size = self.batch_size
+        #data = np.zeros( (bag_size,)+self.data_shape )
+        #label = np.zeros( (bag_size,) )
         tag = []
+        #idx = np.zeros( (bag_size,) )
         print('eval %d images..'%bag_size, self.triplet_cur)
         print('triplet time stat', self.times)
         if self.triplet_cur+bag_size>len(self.triplet_seq):
           self.triplet_reset()
+          #bag_size = min(bag_size, len(self.triplet_seq))
           print('eval %d images..'%bag_size, self.triplet_cur)
         self.times[0] += self.time_elapsed()
         self.time_reset()
+        #print(data.shape)
         data = nd.zeros( self.provide_data[0][1] )
         label = None
         if self.provide_label is not None:
@@ -212,32 +249,46 @@ class FaceImageIter(io.DataIter):
           bb = min(ba+batch_size, bag_size)
           if ba>=bb:
             break
+          _count = bb-ba
+          #data = nd.zeros( (_count,)+self.data_shape )
+          #_batch = self.data_iter.next()
+          #_data = _batch.data[0].asnumpy()
+          #print(_data.shape)
+          #_label = _batch.label[0].asnumpy()
+          #data[ba:bb,:,:,:] = _data
+          #label[ba:bb] = _label
           batch_count = 0
-          #for i in xrange(ba, bb):
           for i in xrange(ba, bb+1000):
             if batch_count >= batch_size:
               continue
+            #print(ba, bb, self.triplet_cur, i, len(self.triplet_seq))
             _idx = self.triplet_seq[i+self.triplet_cur]
             s = self.imgrec.read_idx(_idx)
-            header, img = recordio.unpack(s)
+            header, img = my_unpack(s)
+            #print("%d"%len(img))
             if img == '':
               continue
             img = self.imdecode(img)
-            #data[i-ba][:] = self.postprocess_data(img)
             data[batch_count][:] = self.postprocess_data(img)
             _label = header.label
             if not isinstance(_label, numbers.Number):
               _label = _label[0]
             if label is not None:
               label[batch_count][:] = _label
-              #label[i-ba][:] = _label
             tag.append( ( int(_label), _idx) )
-            batch_count = batch_count + 1
+            batch_count = batch_count+1
+            #idx[i] = _idx
 
           db = mx.io.DataBatch(data=(data,))
           self.mx_model.forward(db, is_train=False)
           net_out = self.mx_model.get_outputs()
+          #print('eval for selecting triplets',ba,bb)
+          #print(net_out)
+          #print(len(net_out))
+          #print(net_out[0].asnumpy())
           net_out = net_out[0].asnumpy()
+          #print(net_out)
+          #print('net_out', net_out.shape)
           if embeddings is None:
             embeddings = np.zeros( (bag_size, net_out.shape[1]))
           embeddings[ba:bb,:] = net_out
@@ -288,7 +339,7 @@ class FaceImageIter(io.DataIter):
         for i in xrange(_count):
           idx = self.oseq[i+ba]
           s = self.imgrec.read_idx(idx)
-          header, img = recordio.unpack(s)
+          header, img = my_unpack(s)
           img = self.imdecode(img)
           data[i][:] = self.postprocess_data(img)
           label[i][:] = header.label
@@ -332,6 +383,33 @@ class FaceImageIter(io.DataIter):
           for i in xrange(self.images_per_identity):
             _idx = _list[i%len(_list)]
             self.seq.append(_idx)
+      #faiss_params = [20,5]
+      #quantizer = faiss.IndexFlatL2(d)  # the other index
+      #index = faiss.IndexIVFFlat(quantizer, d, faiss_params[0], faiss.METRIC_L2)
+      #assert not index.is_trained
+      #index.train(X)
+      #index.add(X)
+      #assert index.is_trained
+      #print('trained')
+      #index.nprobe = faiss_params[1]
+      #D, I = index.search(X, k)     # actual search
+      #print(I.shape)
+      #self.seq = []
+      #for i in xrange(I.shape[0]):
+      #  #assert I[i][0]==i
+      #  for j in xrange(k):
+      #    _label = I[i][j]
+      #    assert _label<len(self.id2range)
+      #    _id = self.header0[0]+_label
+      #    v = self.id2range[_id]
+      #    _list = range(*v)
+      #    if len(_list)<self.images_per_identity:
+      #      random.shuffle(_list)
+      #    else:
+      #      _list = np.random.choice(_list, self.images_per_identity, replace=False)
+      #    for i in xrange(self.images_per_identity):
+      #      _idx = _list[i%len(_list)]
+      #      self.seq.append(_idx)
 
     def reset(self):
         """Resets the iterator to the beginning of the data."""
@@ -380,7 +458,7 @@ class FaceImageIter(io.DataIter):
         idx = self.seq[self.cur]
         self.cur += 1
         s = self.imgrec.read_idx(idx)
-        header, img = recordio.unpack(s)
+        header, img = my_unpack(s)
         label = header.label
         if not isinstance(label, numbers.Number):
           label = label[0]
