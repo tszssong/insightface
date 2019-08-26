@@ -67,6 +67,7 @@ def main(args):
         _img = mx.image.imdecode(_img).asnumpy()[:,:,::-1] # to bgr
         image_path = os.path.join(id_dir, "%d.jpg"%imgid)
         cv2.imwrite(image_path, _img)
+        imgid+=1
     print("Done! total:",pp,"null:", nullid)
 
 if __name__ == '__main__':
