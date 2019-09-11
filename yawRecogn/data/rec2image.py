@@ -37,7 +37,7 @@ def main(args):
       id_dir = os.path.join(args.output, "%d_%d"%(ds_id, identity))
       os.makedirs(id_dir)
       pp+=1
-      if pp%10==0:
+      if pp%10000==0:
         print('processing id', pp)
       s = imgrec.read_idx(identity)
       header, _ = mx.recordio.unpack(s)
