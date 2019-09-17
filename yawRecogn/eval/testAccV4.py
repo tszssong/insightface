@@ -8,17 +8,20 @@ import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser(description='face model evaluate')
 parser.add_argument('--ftname', default='.ft', help='name of feat.')
+parser.add_argument('--ftsize', default=128, type=int)
 parser.add_argument('--imgRoot', help = 'imgRoot')
 parser.add_argument('--listFile', help = 'imgFile')
 parser.add_argument('--ftRoot', help = 'featRoot')
 parser.add_argument('--model', default= 'None', help='model path')
 parser.add_argument('--saveFP', type = int, default = 0)
+parser.add_argument('--saveRoot', type = str, default = './')
 FARs=[1e-2,1e-3,1e-4]
 args = parser.parse_args()
 
 def loadAllFeature2(imgListFile,ftExt = '.arc'):
     imgList = open(imgListFile, 'r').readlines()
-    fullFeat = np.zeros([len(imgList), 128],dtype = np.float32)
+    fullFeat = np.zeros([len(imgList), args.ftsize],dtype = np.float32)
+    # fullFeat = np.zeros([len(imgList), 128],dtype = np.float32)
     ftDir = None
     isGal = np.zeros([len(imgList),1],dtype=np.int)
     if not args.model =='None':
@@ -57,7 +60,6 @@ def getDataStatsOfPairs(imgListFile,base_dir='',ftExt='.arc'):
     return testData
 
 def getLabelMatrix_with_id_probe(label,isGal):
-    print(label.T)
     x = np.zeros([label.shape[0],label.shape[0]])
     ey = np.ones([label.shape[0],label.shape[0]]) -2*np.eye(label.shape[0])
     for i in range(np.max(label)+1):
@@ -83,7 +85,6 @@ def getLabelMatrix(label):
         idxs=np.where(label==i)[0]
         x[idxs[0]:idxs[-1]+1,idxs[0]:idxs[-1]+1]=np.ones([idxs.shape[0],idxs.shape[0]])
     x=np.multiply(x,ey)
-    print(x)
     return x
 
 def evaluateAllData(imgListFile,base_dir='',ftExt='.arc'):
@@ -96,8 +97,7 @@ def evaluateAllData(imgListFile,base_dir='',ftExt='.arc'):
     ImpoNum = np.where(labelArray == 0)[0].shape[0]
     print("GenuNum:%d, ImpoNum:%d"%(GenuNum, ImpoNum))
     nonSelfIdx = np.where(labelArray >-1 )[1]
-    print(np.min(labelArray[:,nonSelfIdx]))
-
+   
     scores = (np.tensordot(testDataFeature, testDataFeature.transpose(), axes=1)+1)/2
     scoreArray = scores.reshape([1,testDataInfo['labels'].shape[0]**2])
 
@@ -151,7 +151,6 @@ def getRocCurveV2(fScores,fLabels,minScore,maxScore,stepThr,GenuNum,ImpoNum):
 
     for idx,far in enumerate(FARs):
         negNums = int(round(ImpoNum*far))
-        # print(idx, far, "negNumber:",negNums)
         if negNums == 0:
             negNums = 1
 
@@ -174,11 +173,7 @@ def getRocCurveV2(fScores,fLabels,minScore,maxScore,stepThr,GenuNum,ImpoNum):
     TPRArry = np.asarray(TPRList)
     AccArry = np.asarray(AccList)
     ThrArry = np.asarray(ThrList)
-    
-    # print(FARList)
-    # print(TPRList)
-    # print(ThrList)
-    
+        
     return FARArry, TPRArry, AccArry, ThrArry
 
 def getFalsePositives(fScores, fLabels, thre, nonSelfIdx):
@@ -197,74 +192,67 @@ def getFarValues(FARs,FARArry,TPRArry,AccArry,ThrArry):
     TPRs = TPRArry[minIdxs]
     Thrs = ThrArry[minIdxs]
     ACCs = AccArry[minIdxs]
-
     #print('TPR\t(cTPR)\t@\tFR\twith\tThr')
     for idx,far in enumerate(FARs):
         print('%.9f(FPR)\t(%.9f(FPR))\t@\t%f(TPR)\t%f(Acc)\twith\t%f(Thr)'%(far,rFARs[idx],TPRs[idx],ACCs[idx],Thrs[idx]))
     return Thrs
 
 # imgListPath = args.imgRoot+args.listFile
-imgListPath = '/data03/zhengmeisong/wkspace/FR/doorbell/logs/ai_img_v4_11.lst'
+imgListPath = '/data03/zhengmeisong/wkspace/FR/doorbell/logs/ai_all_smallface_picked.lst'
 ftName = args.ftname #'.dl23f1-80' #'.q2-146'
 fScores,fLabels,minScore,maxScore,stepThr,GenuNum,ImpoNum,nonSelfIdx,scores=evaluateAllData(imgListPath,base_dir='',ftExt=ftName)#'.r50_grn3ft_tripletnd')#r50_grn1ft_color')
 print(fScores.shape)
 # for i in range(fScores.shape[0]):
 #     print(fScores[i]," "),
 minScore = np.max([minScore, 0.5])
-# minScore = np.max([minScore, 0.2])
 maxScore = np.min([maxScore,0.9])
 FARArry, TPRArry,AccArry,ThrArry=getRocCurveV2(fScores,fLabels,minScore,maxScore,0.0001,GenuNum,ImpoNum)
-# thList=[0.02, 0.01, 0.005, 0.001, 0.0005, 0.0001]
-# for th in thList:
-#     print("th:",th)
-#     FARArry, TPRArry,AccArry,ThrArry=getRocCurve(fScores,fLabels,minScore,maxScore,th,GenuNum,ImpoNum)
 THRS=getFarValues(FARs,FARArry,TPRArry,AccArry,ThrArry)
-
 
 scoreArray = scores.reshape([1, scores.shape[0]**2])
 imgLit = open(imgListPath).readlines()
 
-if True:
+if False:
     for idx, thr in enumerate(THRS):
-        if idx ==0 or idx == 1:
-            continue
         
         fpairs  = getFalsePositives(fScores, fLabels,thr, nonSelfIdx)
         fnpairs = getFalseNegatives(fScores, fLabels,thr, nonSelfIdx)
         print(thr,'fpairs',len(fpairs),'npairs', len(fnpairs))
+        if idx == 1 or idx == 2:
+            continue
         fscores = scoreArray[0,fpairs][:,np.newaxis]
         fnscores = scoreArray[0,fnpairs][:,np.newaxis]
 
         vInfo   = np.concatenate([fpairs[:,np.newaxis],fscores],axis=1)
-    
-        if not os.path.exists("./log/"):
-            os.mkdir("./log/")
-        if not os.path.exists("./log/fp_imgs/"):
-            os.mkdir("./log/fp_imgs/")
-        if not os.path.exists("./log/fn_imgs/"):
-            os.mkdir("./log/fn_imgs/")
-        fName = './log/fpIdx_%d.txt'%idx
-        fName2 = './log/fnIdx_%d.txt'%idx
+        saveDir = args.saveRoot + '/' + args.ftname
+        if not os.path.exists(saveDir):
+            os.mkdir(saveDir)
+        if not os.path.exists(saveDir+"/fp_imgs/"):
+            os.mkdir(saveDir+"/fp_imgs/")
+        if not os.path.exists(saveDir+"/fn_imgs/"):
+            os.mkdir(saveDir+"/fn_imgs/")
+        fName = saveDir+'/fpIdx_%d.txt'%idx
+        fName2 = saveDir+'/fnIdx_%d.txt'%idx
         fid = open(fName,'w')
         fid2 = open(fName2,'w')
         for idx,ret in enumerate(zip(fpairs,fscores)):
-            pairIdx , score = ret;
+            pairIdx , score = ret
             idA = pairIdx%scores.shape[0]
             idB = pairIdx/scores.shape[0]
             imgA = imgLit[idA].split(' ')[0]
             imgB = imgLit[idB].split(' ')[0]
             fid.write("%d\t%6.5f\t%s\t%s\n"%(pairIdx,score,imgA,imgB))
-            shutil.copy(imgA, './log/fp_imgs/'+str(pairIdx)+'_a.jpg')
-            shutil.copy(imgB, './log/fp_imgs/'+str(pairIdx)+'_b.jpg')
+            shutil.copy(imgA,  saveDir+'/fp_imgs/'+str(pairIdx)+'_a.jpg')
+            shutil.copy(imgB,  saveDir+'/fp_imgs/'+str(pairIdx)+'_b.jpg')
         for idx,ret in enumerate(zip(fnpairs,fnscores)):
-            pairIdx , score = ret;
+            pairIdx , score = ret
             idA = pairIdx%scores.shape[0]
             idB = pairIdx/scores.shape[0]
             imgA = imgLit[idA].split(' ')[0]
             imgB = imgLit[idB].split(' ')[0]
             fid2.write("%d\t%6.5f\t%s\t%s\n"%(pairIdx,score,imgA,imgB))
-            shutil.copy(imgA, './log/fn_imgs/'+str(pairIdx)+'_a.jpg')
-            shutil.copy(imgB, './log/fn_imgs/'+str(pairIdx)+'_b.jpg')
+            shutil.copy(imgA,  saveDir+'/fn_imgs/'+str(pairIdx)+'_a.jpg')
+            shutil.copy(imgB,  saveDir+'/fn_imgs/'+str(pairIdx)+'_b.jpg')
     
         fid.close()
         fid2.close()
