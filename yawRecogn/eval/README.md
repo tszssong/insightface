@@ -1,0 +1,1 @@
+- genBinQH.py 生成bin测试文件，这里是根据list事先解出一对一对的小图（比如1_1.jpg和1_2.jpg是一对），is_same.list里表示了每一对小图是否是同一个人  
