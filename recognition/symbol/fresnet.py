@@ -640,3 +640,16 @@ def get_symbol():
 
 
 
+if __name__=="__main__":
+    num_classes = 200
+    num_layers = 18
+    filter_list = [64, 64, 128, 256, 512]
+    bottle_neck = False
+    num_stages = 4
+    units = [2, 2, 2, 2]
+    net = resnet( units       = units,
+                  num_stages  = num_stages,
+                  filter_list = filter_list,
+                  num_classes = num_classes,
+                  bottle_neck = bottle_neck)
+    mx.visualization.plot_network(net).view()
