@@ -49,31 +49,17 @@ def cal_roc_save_bad(thresholds, embeddings1, embeddings2, actual_issame, nrof_f
     dist = np.sum(np.square(diff),1)
     
     for fold_idx, (train_set, test_set) in enumerate(k_fold.split(indices)):
-        print('flod_idx', fold_idx)
-        print('train_set', len(train_set), train_set[0], train_set[1])
-        print('test_set', len(test_set), test_set[0], test_set[1])
         # Find the best threshold for the fold
         acc_train = np.zeros((nrof_thresholds))
         for threshold_idx, threshold in enumerate(thresholds):
             _, _, acc_train[threshold_idx] = calculate_accuracy(threshold, dist[train_set], actual_issame[train_set])
         best_threshold_index = np.argmax(acc_train)
-        print('idx', best_threshold_index, 'threshold', thresholds[best_threshold_index])
         for threshold_idx, threshold in enumerate(thresholds):
             tprs[fold_idx,threshold_idx], fprs[fold_idx,threshold_idx], _ = calculate_accuracy(threshold, dist[test_set], actual_issame[test_set])
         _, _, accuracy[fold_idx] = calculate_accuracy(thresholds[best_threshold_index], dist[test_set], actual_issame[test_set])
     bth = thresholds[best_threshold_index]
     predict_issame = np.less(dist, bth)
-    print('best th=',bth, 'dict', dict[355], dict[356] )
-    print('predict_issame', len(predict_issame), predict_issame[355], predict_issame[356])
-    print('actual_issame', len(actual_issame), actual_issame[355], actual_issame[356])
-    badcase_idx = np.where(predict_issame!=actual_issame)
-    print(badcase_idx[0])
-    print(len(badcase_idx), len(badcase_idx[0]))
-    fw = open('./badcase.txt', 'w')
-    for idx in range(len(badcase_idx[0])):
-        fw.write('%d - %d\n'%(idx, badcase_idx[0][idx]) )
-    fw.close
-        
+    badcase_idx = np.where(predict_issame!=actual_issame)     
     tpr = np.mean(tprs,0)
     fpr = np.mean(fprs,0)
     return tpr, fpr, accuracy
@@ -538,7 +524,7 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='do verification')
   # general
   parser.add_argument('--data-dir', default='/data03/zhengmeisong/TrainData/glintv2_angle/', help='')
-  parser.add_argument('--model', default='models/y6-softmax-emore/model,200', help='path to load model.')
+  parser.add_argument('--model', default='models/y6-arcface-emore/model,200', help='path to load model.')
   parser.add_argument('--target', default='cfp_fp_yaw', help='test targets.')
   parser.add_argument('--gpu', default=0, type=int, help='gpu id')
   parser.add_argument('--batch-size', default=32, type=int, help='')

@@ -7,7 +7,7 @@ config = edict()
 config.bn_mom = 0.9
 config.workspace = 256
 config.emb_size = 512
-config.ckpt_embedding = True
+config.ckpt_embedding = False
 config.net_se = 0
 config.net_act = 'prelu'
 config.net_unit = 3
@@ -67,7 +67,7 @@ network.d201.densenet_dropout = 0.0
 network.y1 = edict()
 network.y1.net_name = 'fmobilefacenet'
 network.y1.emb_size = 128
-network.y1.net_output = 'GDC'
+network.y1.net_output = 'GNAP'
 
 network.y2 = edict()
 network.y2.net_name = 'fmobilefacenet'
@@ -190,7 +190,7 @@ default.pretrained_epoch = 1
 default.dataset = 'emore'
 default.loss = 'arcface'
 default.frequent = 20
-default.verbose = 1000
+default.verbose = 2000
 default.kvstore = 'device'
 
 default.end_epoch = 10000

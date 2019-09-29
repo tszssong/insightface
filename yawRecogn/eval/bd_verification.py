@@ -316,7 +316,7 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='do verification')
   # general
   parser.add_argument('--data-dir', default='/data03/zhengmeisong/TrainData/glintv2_angle/', help='')
-  parser.add_argument('--model', default='models/y6-softmax-emore/model,200', help='path to load model.')
+  parser.add_argument('--model', default='models/y6-arcface-emore/model,200', help='path to load model.')
   parser.add_argument('--target', default='cfp_fp_yaw', help='test targets.')
   parser.add_argument('--gpu', default=0, type=int, help='gpu id')
   parser.add_argument('--batch-size', default=32, type=int, help='')
@@ -347,7 +347,6 @@ if __name__ == '__main__':
       assert len(_max)==2
       if len(epochs)>_max[1]:
         epochs = epochs[_max[0]:_max[1]]
-
   else:
     epochs = [int(x) for x in vec[1].split('|')]
   print('model number', len(epochs))

@@ -5,8 +5,14 @@ import mxnet as mx
 import symbol_utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from config import config
-def sigmoid(x):
-    return 1./(1. + mx.symbol.exp(-x))
+# def sigmoid(x):
+#     return 1./(1. + mx.symbol.exp(-x))
+def Sigmoid(data, name=None):
+    x = mx.symbol.abs(data, name='%s_abs'%name)
+    x = -(x/45.0 - 1)*10
+    y = mx.symbol.exp(x, name='%s_exp'%name)
+    y = 1.0/(1.0+y)
+    return y
 
 def Act(data, act_type, name):
     #ignore param act_type, set it in this function 
@@ -57,30 +63,6 @@ def get_symbol():
     num_classes = config.emb_size
     print('in_network', config)
     fc_type = config.net_output
-    data = mx.symbol.Variable(name="data")
-    data = data-127.5
-    data = data*0.0078125
-    blocks = config.net_blocks
-    conv_1 = Conv(data, num_filter=64, kernel=(3, 3), pad=(1, 1), stride=(2, 2), name="conv_1")
-    if blocks[0]==1:
-      conv_2_dw = Conv(conv_1, num_group=64, num_filter=64, kernel=(3, 3), pad=(1, 1), stride=(1, 1), name="conv_2_dw")
-    else:
-      conv_2_dw = Residual(conv_1, num_block=blocks[0], num_out=64, kernel=(3, 3), stride=(1, 1), pad=(1, 1), num_group=64, name="res_2")
-    conv_23 = DResidual(conv_2_dw, num_out=64, kernel=(3, 3), stride=(2, 2), pad=(1, 1), num_group=128, name="dconv_23")
-    conv_3 = Residual(conv_23, num_block=blocks[1], num_out=64, kernel=(3, 3), stride=(1, 1), pad=(1, 1), num_group=128, name="res_3")
-    conv_34 = DResidual(conv_3, num_out=128, kernel=(3, 3), stride=(2, 2), pad=(1, 1), num_group=256, name="dconv_34")
-    conv_4 = Residual(conv_34, num_block=blocks[2], num_out=128, kernel=(3, 3), stride=(1, 1), pad=(1, 1), num_group=256, name="res_4")
-    conv_45 = DResidual(conv_4, num_out=128, kernel=(3, 3), stride=(2, 2), pad=(1, 1), num_group=512, name="dconv_45")
-    conv_5 = Residual(conv_45, num_block=blocks[3], num_out=128, kernel=(3, 3), stride=(1, 1), pad=(1, 1), num_group=256, name="res_5")
-    conv_6_sep = Conv(conv_5, num_filter=512, kernel=(1, 1), pad=(0, 0), stride=(1, 1), name="conv_6sep")
-
-    fc1 = symbol_utils.get_fc1(conv_6_sep, num_classes, fc_type)
-    return fc1
-
-def get_symbol_v6():
-    num_classes = config.emb_size
-    print('in_network', config)
-    fc_type = config.net_output
     print('start get_symbol_v6')
     data = mx.symbol.Variable(name="data")
     yaw = mx.symbol.Variable(name="yaw")
@@ -106,8 +88,10 @@ def get_symbol_v6():
         fc_dr1 = mx.sym.BatchNorm(data=fc_dr1, fix_gamma=False, eps=2e-5, momentum=bn_mom, name="bn_fc_dr1")
         fc_dr2 = mx.sym.FullyConnected(data=fc_dr1, num_hidden = num_classes, name = "fc_dr2")
         fc_dr2 = mx.sym.BatchNorm(data=fc_dr2, fix_gamma=False, eps=2e-5, momentum=bn_mom, name="bn_fc_dr2")
-        coef_yaw = sigmoid(10.0*(mx.symbol.abs(yaw)/45.0-1))
-        fc1 = body + mx.sym.broadcast_mul(coef_yaw, fc_dr2)
+        # coef_yaw = sigmoid(10.0*(mx.symbol.abs(yaw)/45.0-1))
+        coef_yaw = Sigmoid(yaw, name="sigmoid_yaw")
+        fc_dream = body + mx.sym.broadcast_mul(coef_yaw, fc_dr2, name="fc_dream")
 
-    return fc1
-
+        return fc_dream
+    else:
+        return fc1
