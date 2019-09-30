@@ -89,7 +89,7 @@ def parse_args():
   parser.add_argument('--cutoff', type=int, default=0, help='')
   parser.add_argument('--lr-steps', type=str, default='', help='')
   parser.add_argument('--max-steps', type=int, default=0, help='')
-  parser.add_argument('--target', type=str, default='lfw,cfp_fp,agedb_30', help='')
+  parser.add_argument('--target', type=str, default='lfw', help='')
   args = parser.parse_args()
   return args
 

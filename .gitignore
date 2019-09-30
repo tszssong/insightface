@@ -1,8 +1,12 @@
 # Byte-compiled / optimized / DLL files
+*log*
+*.code-workspace 
+myInsightface.code-workspace
 datasets/*
 __pycache__/
 *.py[cod]
 *$py.class
+*.gv
 
 # C extensions
 *.so
