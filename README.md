@@ -18,3 +18,8 @@
 
 ### 训练  
 - yawRecogn  
+#### 测试  
+  景安4万id测试脚本在src/eval/  
+  getFeature.py #抽取特征  
+  score/test_acc_ja.py #支持超2w id的测试,需提前抽特征并分别给定id和face两个list,拆分list的脚本在script
+
