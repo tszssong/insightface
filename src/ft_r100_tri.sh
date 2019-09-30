@@ -1,6 +1,7 @@
 export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
 DATA_DIR=/data03/zhengmeisong/TrainData/casia/
-MODELDIR=../../model_r100_`date +'%m_%d'`
+DATA_DIR=/cloud_data01/StrongRootData/TrainData/glintv2_emore_ms1m/
+MODELDIR=../../mx-model/model_r100_`date +'%m_%d'`
 mkdir $MODELDIR
 PREFIX="$MODELDIR/model-r100-triplet"
 
