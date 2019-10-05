@@ -159,7 +159,7 @@ if args.saveFP==1:
             continue
         fp_pair_idxs  = getFalsePositives(fScores, fLabels,thr)
         fn_pair_idxs = getFalseNegatives(fScores, fLabels,thr)
-        print(fp_pair_idxs, fn_pair_idxs)
+        # print(fp_pair_idxs, fn_pair_idxs)
         print(thr,'fpairs',len(fp_pair_idxs),'npairs', len(fn_pair_idxs))
         fpName = './log/fpIdx_%d.txt'%idx
         fnName = './log/fnIdx_%d.txt'%idx

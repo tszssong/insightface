@@ -13,17 +13,42 @@ import sklearn
 import sklearn.preprocessing
 import datetime
 import numpy as np
-import cv2
-
 import argparse
+import cv2
+import struct
+from collections import namedtuple
 import mxnet as mx
 from mxnet import ndarray as nd
+#from . import _ndarray_internal as _internal
+#from mxnet._ndarray_internal import _cvimresize as imresize
+#from ._ndarray_internal import _cvcopyMakeBorder as copyMakeBorder
 from mxnet import io
 from mxnet import recordio
 sys.path.append(os.path.join(os.path.dirname(__file__), 'common'))
 import face_preprocess
 
 logger = logging.getLogger()
+
+_IR_FORMAT = 'IfQQ'
+_IR_SIZE = struct.calcsize(_IR_FORMAT)
+IRHeader = namedtuple('HEADER', ['flag', 'label', 'id', 'id2'])
+def my_unpack(s):
+    header = IRHeader(*struct.unpack(_IR_FORMAT, s[:_IR_SIZE]))
+    s = s[_IR_SIZE:]
+    if header.flag > 0:
+        header = header._replace(label=np.frombuffer(s, np.double, header.flag))
+        #print header.flag
+        s = s[header.flag*8:]
+    return header, s
+
+def my_unpack_float(s):
+    header = IRHeader(*struct.unpack(_IR_FORMAT, s[:_IR_SIZE]))
+    s = s[_IR_SIZE:]
+    if header.flag > 0:
+        header = header._replace(label=np.frombuffer(s, np.float32, header.flag))
+        #print header.flag
+        s = s[header.flag*4:]
+    return header, s
 
 class FaceImageIter(io.DataIter):
 
@@ -43,7 +68,7 @@ class FaceImageIter(io.DataIter):
         path_imgidx = path_imgrec[0:-4]+".idx"
         self.imgrec = recordio.MXIndexedRecordIO(path_imgidx, path_imgrec, 'r')  # pylint: disable=redefined-variable-type
         s = self.imgrec.read_idx(0)
-        header, _ = recordio.unpack(s)
+        header, _ = my_unpack(s)
         assert header.flag>0
         print('header0 label', header.label)
         self.header0 = (int(header.label[0]), int(header.label[1]))
@@ -53,7 +78,7 @@ class FaceImageIter(io.DataIter):
         self.seq_identity = range(int(header.label[0]), int(header.label[1]))
         for identity in self.seq_identity:
           s = self.imgrec.read_idx(identity)
-          header, _ = recordio.unpack(s)
+          header, _ = my_unpack(s)
           a,b = int(header.label[0]), int(header.label[1])
           self.id2range[identity] = (a,b)
 
@@ -98,15 +123,13 @@ class FaceImageIter(io.DataIter):
           self.triplet_mode = True
           self.triplet_cur = 0
           self.triplet_seq = []
-          self.triplet_reset()
+          self.triplet_reset()  #fill in self.triplet_seq
           self.seq_min_size = self.batch_size*2
         self.cur = 0
         self.nbatch = 0
         self.is_init = False
         self.times = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         #self.reset()
-
-
 
     def pairwise_dists(self, embeddings):
       nd_embedding_list = []
@@ -148,12 +171,18 @@ class FaceImageIter(io.DataIter):
 
               for pair in xrange(j, nrof_images): # For every possible positive pair.
                   p_idx = emb_start_idx + pair
+                  #self.time_reset()
                   pos_dist_sqr = np.sum(np.square(embeddings[a_idx]-embeddings[p_idx]))
+                  #self.times[4] += self.time_elapsed()
+                  #self.time_reset()
                   neg_dists_sqr[emb_start_idx:emb_start_idx+nrof_images] = np.NaN
                   if self.triplet_max_ap>0.0:
                     if pos_dist_sqr>self.triplet_max_ap:
                       continue
                   all_neg = np.where(np.logical_and(neg_dists_sqr-pos_dist_sqr<self.triplet_alpha, pos_dist_sqr<neg_dists_sqr))[0]  # FaceNet selection
+                  #self.times[5] += self.time_elapsed()
+                  #self.time_reset()
+                  #all_neg = np.where(neg_dists_sqr-pos_dist_sqr<alpha)[0] # VGG Face selecction
                   nrof_random_negs = all_neg.shape[0]
                   if nrof_random_negs>0:
                       rnd_idx = np.random.randint(nrof_random_negs)
@@ -191,6 +220,7 @@ class FaceImageIter(io.DataIter):
 
 
     def select_triplets(self):
+      print('triplet_image_iter.py select_triplets')
       self.seq = []
       while len(self.seq)<self.seq_min_size:
         self.time_reset()
@@ -198,13 +228,18 @@ class FaceImageIter(io.DataIter):
         bag_size = self.triplet_bag_size
         batch_size = self.batch_size
         tag = []
+        #idx = np.zeros( (bag_size,) )
         print('eval %d images..'%bag_size, self.triplet_cur)
         print('triplet time stat', self.times)
         if self.triplet_cur+bag_size>len(self.triplet_seq):
           self.triplet_reset()
+          #bag_size = min(bag_size, len(self.triplet_seq))
           print('eval %d images..'%bag_size, self.triplet_cur)
         self.times[0] += self.time_elapsed()
         self.time_reset()
+        #print(data.shape)
+        #data = np.zeros( (bag_size,)+self.data_shape )
+        #label = np.zeros( (bag_size,) )
         data = nd.zeros( self.provide_data[0][1] )
         label = None
         if self.provide_label is not None:
@@ -214,32 +249,46 @@ class FaceImageIter(io.DataIter):
           bb = min(ba+batch_size, bag_size)
           if ba>=bb:
             break
+          _count = bb-ba
+          #data = nd.zeros( (_count,)+self.data_shape )
+          #_batch = self.data_iter.next()
+          #_data = _batch.data[0].asnumpy()
+          #print(_data.shape)
+          #_label = _batch.label[0].asnumpy()
+          #data[ba:bb,:,:,:] = _data
+          #label[ba:bb] = _label
           batch_count = 0
-          #for i in xrange(ba, bb):
           for i in xrange(ba, bb+1000):
             if batch_count >= batch_size:
               continue
+            #print(ba, bb, self.triplet_cur, i, len(self.triplet_seq))
             _idx = self.triplet_seq[i+self.triplet_cur]
             s = self.imgrec.read_idx(_idx)
-            header, img = recordio.unpack(s)
+            header, img = my_unpack(s)
+            #print("%d"%len(img))
             if img == '':
               continue
             img = self.imdecode(img)
-            #data[i-ba][:] = self.postprocess_data(img)
             data[batch_count][:] = self.postprocess_data(img)
             _label = header.label
             if not isinstance(_label, numbers.Number):
               _label = _label[0]
             if label is not None:
               label[batch_count][:] = _label
-              #label[i-ba][:] = _label
             tag.append( ( int(_label), _idx) )
-            batch_count = batch_count + 1
+            batch_count = batch_count+1
+            #idx[i] = _idx
 
           db = mx.io.DataBatch(data=(data,))
           self.mx_model.forward(db, is_train=False)
           net_out = self.mx_model.get_outputs()
+          #print('eval for selecting triplets',ba,bb)
+          #print(net_out)
+          #print(len(net_out))
+          #print(net_out[0].asnumpy())
           net_out = net_out[0].asnumpy()
+          #print(net_out)
+          #print('net_out', net_out.shape)
           if embeddings is None:
             embeddings = np.zeros( (bag_size, net_out.shape[1]))
           embeddings[ba:bb,:] = net_out
@@ -290,7 +339,7 @@ class FaceImageIter(io.DataIter):
         for i in xrange(_count):
           idx = self.oseq[i+ba]
           s = self.imgrec.read_idx(idx)
-          header, img = recordio.unpack(s)
+          header, img = my_unpack(s)
           img = self.imdecode(img)
           data[i][:] = self.postprocess_data(img)
           label[i][:] = header.label
@@ -334,6 +383,7 @@ class FaceImageIter(io.DataIter):
           for i in xrange(self.images_per_identity):
             _idx = _list[i%len(_list)]
             self.seq.append(_idx)
+    
 
     def reset(self):
         """Resets the iterator to the beginning of the data."""
@@ -382,7 +432,7 @@ class FaceImageIter(io.DataIter):
         idx = self.seq[self.cur]
         self.cur += 1
         s = self.imgrec.read_idx(idx)
-        header, img = recordio.unpack(s)
+        header, img = my_unpack(s)
         label = header.label
         if not isinstance(label, numbers.Number):
           label = label[0]
@@ -461,13 +511,27 @@ class FaceImageIter(io.DataIter):
                   _data = _data.astype('float32')
                   #print(starth, endh, startw, endw, _data.shape)
                   _data[starth:endh, startw:endw, :] = 127.5
-               
+                #_npdata = _data.asnumpy()
+                #if landmark is not None:
+                #  _npdata = face_preprocess.preprocess(_npdata, bbox = bbox, landmark=landmark, image_size=self.image_size)
+                #if self.rand_mirror:
+                #  _npdata = self.mirror_aug(_npdata)
+                #if self.mean is not None:
+                #  _npdata = _npdata.astype(np.float32)
+                #  _npdata -= self.mean
+                #  _npdata *= 0.0078125
+                #nimg = np.zeros(_npdata.shape, dtype=np.float32)
+                #nimg[self.patch[1]:self.patch[3],self.patch[0]:self.patch[2],:] = _npdata[self.patch[1]:self.patch[3], self.patch[0]:self.patch[2], :]
+                #_data = mx.nd.array(nimg)
                 data = [_data]
                 try:
                     self.check_valid_image(data)
                 except RuntimeError as e:
                     logging.debug('Invalid image, skipping:  %s', str(e))
                     continue
+                #print('aa',data[0].shape)
+                #data = self.augmentation_transform(data)
+                #print('bb',data[0].shape)
                 for datum in data:
                     assert i < batch_size, 'Batch size must be multiples of augmenter output length'
                     #print(datum.shape)
@@ -574,16 +638,16 @@ if __name__ =="__main__":
   parser = argparse.ArgumentParser(description='triplet image iter')
   # general
   # parser.add_argument('--data-dir', default='/data03/zhengmeisong/TrainData/test2w/train.rec', help='training set directory')
-  parser.add_argument('--data-dir', default='/data04/zhengmeisong/TrainData/glintv2_emore_ms1m_dl23W1f1_150WW1/train.rec')
+  parser.add_argument('--data-dir', default='/data04/zhengmeisong/TrainData/glintv2_emore_ms1m_dl23f1/train.rec')
   parser.add_argument('--prefix', default='../model/model', help='directory to save model.')
-  parser.add_argument('--pretrained', default='../../model_r100_09_28/model-r100-triplet,2001', help='pretrained model to load')
+  parser.add_argument('--pretrained', default='../../model_r100_09_30/model-r100-triplet,43', help='pretrained model to load')
   parser.add_argument('--ckpt', type=int, default=3, help='checkpoint saving option. 0: discard saving. 1: save when necessary. 2: always save')
   parser.add_argument('--network', default='r100', help='specify network')
 
   parser.add_argument('--emb-size', type=int, default=512, help='embedding length')
   parser.add_argument('--batch-size', type=int, default=12, help='batch size in each context')
   parser.add_argument('--images-per-identity', type=int, default=5, help='')
-  parser.add_argument('--triplet-bag-size', type=int, default=1200, help='')
+  parser.add_argument('--triplet-bag-size', type=int, default=72000, help='')
   parser.add_argument('--triplet-alpha', type=float, default=0.3, help='')
   parser.add_argument('--triplet-max-ap', type=float, default=0.0, help='')
  
@@ -642,31 +706,36 @@ if __name__ =="__main__":
     os.makedirs('./tmp/')
   count = 0
   while(True):
-    if(count>1):
+    try:
+      batchdata = test_dataiter.next()
+    except:
       break
-    test_dataiter.reset()
-    batchdata = test_dataiter.next()
+      test_dataiter.reset()
+      batchdata = test_dataiter.next()
     
     count+=1
-    print(type(batchdata))
+    # print(type(batchdata))
     data = batchdata.data
     label = batchdata.label
-    print(type(data), len(data))
-    print(type(data[0]))
-    print(data[0].shape, label[0].shape)
+    # print(type(data), len(data))
+    # print(type(data[0]))
+    # print(data[0].shape, label[0].shape)
     b_data,b_label = data[0], label[0]
     triplet_gap = int(args.batch_size/3)
     for idx in range(triplet_gap):
-      a_img, p_img, n_img = b_data[idx],b_data[triplet_gap + idx],b_data[2*triplet_gap+idx]
-      # a_lab, p_lab, n_lab = b
+      a_img, p_img, n_img = b_data[idx],b_data[triplet_gap+idx],b_data[2*triplet_gap+idx]
+      a_lab, p_lab, n_lab = b_label[idx], b_label[triplet_gap+idx], b_label[2*triplet_gap+idx]
       imga = a_img.asnumpy().transpose( (1,2,0) )[...,::-1]
       filename = './tmp/%05d_%03d'%(count,idx) + '_a.jpg'
+      imga = cv2.putText(imga, "%.1f"%a_lab.asnumpy(), (0,50), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,255,0),2)
       cv2.imwrite(filename, imga)
       imgp = p_img.asnumpy().transpose( (1,2,0) )[...,::-1]
+      imgp = cv2.putText(imgp, "%.1f"%p_lab.asnumpy(), (0,50), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,255,0),2)
       filename = './tmp/%05d_%03d'%(count,idx) + '_p.jpg'
       cv2.imwrite(filename, imgp)
       imgn = n_img.asnumpy().transpose( (1,2,0) )[...,::-1]
+      imgn = cv2.putText(imgn, "%.1f"%n_lab.asnumpy(), (0,50), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,255,0),2)
       filename = './tmp/%05d_%03d'%(count,idx)+ '_n.jpg'
       cv2.imwrite(filename, imgn)
+      
     
-    # print(batchdata.shape)
