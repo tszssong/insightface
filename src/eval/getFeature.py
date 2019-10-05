@@ -22,7 +22,7 @@ parser.add_argument('--det', default=0, type=int, help='mtcnn option, 2 means us
 parser.add_argument('--flip', default=0, type=int, help='whether do lr flip aug')
 parser.add_argument('--threshold', default=1.24, type=float, help='ver dist threshold')
 parser.add_argument('--ftname', type=str, default='.ft')
-parser.add_argument('--imlist', type=str, default='//data03/zhengmeisong/TestData/CASIA-IvS-Test/CASIA-IvS-Test-final-v3-revised.lst')
+parser.add_argument('--imlist', type=str, default='../../../../../TestData/CASIA-IvS-Test/CASIA-IvS-Test-final-v3-revised.lst')
 #parser.add_argument('--imlist', type=str, default='//data03/zhengmeisong/TestData/JA-Test/imgs.lst')
 
 args = parser.parse_args()
