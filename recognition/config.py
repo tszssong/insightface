@@ -15,7 +15,7 @@ config.net_input = 1
 config.net_blocks = [1,4,6,2]
 config.net_output = 'E'
 config.net_multiplier = 1.0
-config.val_targets = ['lfw', 'cfp_fp', 'agedb_30']
+config.val_targets = ['lfw', 'casia_ivs', 'ja_rd_ivs']
 config.ce_loss = True
 config.fc7_lr_mult = 1.0
 config.fc7_wd_mult = 10.0
@@ -113,10 +113,10 @@ dataset = edict()
 
 dataset.emore = edict()
 dataset.emore.dataset = 'emore'
-dataset.emore.dataset_path = '/home/zhengmeisong/TrainData/glintv2_emore_ms1m'
-dataset.emore.num_classes = 143474
+dataset.emore.dataset_path = '/cloud_data01/zhengmeisong/TrainData/casia_jr'
+dataset.emore.num_classes = 12826896
 dataset.emore.image_shape = (112,112,3)
-dataset.emore.val_targets = ['lfw', 'cfp_fp', 'agedb_30']
+dataset.emore.val_targets = ['lfw', 'casia_ivs', 'ja_rd_ivs']
 
 dataset.retina = edict()
 dataset.retina.dataset = 'retina'
@@ -160,9 +160,9 @@ loss.combined.loss_m3 = 0.2
 loss.triplet = edict()
 loss.triplet.loss_name = 'triplet'
 loss.triplet.images_per_identity = 5
-loss.triplet.triplet_alpha = 0.3
-loss.triplet.triplet_bag_size = 7200
-loss.triplet.triplet_max_ap = 0.0
+loss.triplet.triplet_alpha = 0.5
+loss.triplet.triplet_bag_size = 72000
+loss.triplet.triplet_max_ap = 1.3
 loss.triplet.per_batch_size = 60
 loss.triplet.lr = 0.05
 
@@ -180,8 +180,8 @@ default = edict()
 
 # default network
 default.network = 'r100'
-default.pretrained = ''
-default.pretrained_epoch = 1
+default.pretrained = '../../model-r100-ii/model'
+default.pretrained_epoch = 0
 # default dataset
 default.dataset = 'emore'
 default.loss = 'arcface'
@@ -193,7 +193,7 @@ default.end_epoch = 10000
 default.lr = 0.1
 default.wd = 0.00004
 default.mom = 0.9
-default.per_batch_size = 128
+default.per_batch_size = 1
 default.ckpt = 2
 default.lr_steps = '500000,800000,1000000'
 default.models_root = './models'
