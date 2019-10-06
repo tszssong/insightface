@@ -2,11 +2,12 @@ import glob
 import numpy
 
 import os
-SDPath =  '/data3/zhengmeisong/data/jaTrain/'
+SDPath =  '/data3/zhengmeisong/data/jrPairs/'
 FDSets = ['imgs/','xxx']
 
-fid = open('jaTrain.lst','w')
+fid = open('jr.lst','w')
 count=0
+
 
 imgSet = FDSets[0]
 GatRoots = glob.glob(SDPath+imgSet+'/*')

@@ -244,18 +244,18 @@ def test(data_set, mx_model, batch_size, nfolds=10, data_extra = None, label_sha
   for idx in fp_idx:
     print(idx)
     imga = data[idx*2].asnumpy().transpose( (1,2,0) )[...,::-1]
-    filename = './badcases/p' + str(idx) + 'a.jpg'
+    filename = './badcases/fp' + str(idx) + 'a.jpg'
     cv2.imwrite(filename, imga)
     imgb = data[idx*2+1].asnumpy().transpose( (1,2,0) )[...,::-1]
-    filename = './badcases/p' + str(idx) + 'b.jpg'
+    filename = './badcases/fp' + str(idx) + 'b.jpg'
     cv2.imwrite(filename, imgb)
   for idx in fn_idx:
     print(idx)
     imga = data[idx*2].asnumpy().transpose( (1,2,0) )[...,::-1]
-    filename = './badcases/n' + str(idx) + 'a.jpg'
+    filename = './badcases/fn' + str(idx) + 'a.jpg'
     cv2.imwrite(filename, imga)
     imgb = data[idx*2+1].asnumpy().transpose( (1,2,0) )[...,::-1]
-    filename = './badcases/n' + str(idx) + 'b.jpg'
+    filename = './badcases/fn' + str(idx) + 'b.jpg'
     cv2.imwrite(filename, imgb)
   return acc1, std1, acc2, std2, _xnorm, embeddings_list
 
