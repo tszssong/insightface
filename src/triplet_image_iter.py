@@ -10,10 +10,12 @@ import sys
 import numbers
 import math
 import sklearn
+import sklearn.preprocessing
 import datetime
 import numpy as np
 import cv2
 
+import argparse
 import mxnet as mx
 from mxnet import ndarray as nd
 from mxnet import io
@@ -459,27 +461,13 @@ class FaceImageIter(io.DataIter):
                   _data = _data.astype('float32')
                   #print(starth, endh, startw, endw, _data.shape)
                   _data[starth:endh, startw:endw, :] = 127.5
-                #_npdata = _data.asnumpy()
-                #if landmark is not None:
-                #  _npdata = face_preprocess.preprocess(_npdata, bbox = bbox, landmark=landmark, image_size=self.image_size)
-                #if self.rand_mirror:
-                #  _npdata = self.mirror_aug(_npdata)
-                #if self.mean is not None:
-                #  _npdata = _npdata.astype(np.float32)
-                #  _npdata -= self.mean
-                #  _npdata *= 0.0078125
-                #nimg = np.zeros(_npdata.shape, dtype=np.float32)
-                #nimg[self.patch[1]:self.patch[3],self.patch[0]:self.patch[2],:] = _npdata[self.patch[1]:self.patch[3], self.patch[0]:self.patch[2], :]
-                #_data = mx.nd.array(nimg)
+               
                 data = [_data]
                 try:
                     self.check_valid_image(data)
                 except RuntimeError as e:
                     logging.debug('Invalid image, skipping:  %s', str(e))
                     continue
-                #print('aa',data[0].shape)
-                #data = self.augmentation_transform(data)
-                #print('bb',data[0].shape)
                 for datum in data:
                     assert i < batch_size, 'Batch size must be multiples of augmenter output length'
                     #print(datum.shape)
@@ -557,4 +545,128 @@ class FaceImageIterList(io.DataIter):
         continue
       return ret
 
+def get_symbol(args, arg_params, aux_params, batch_size, alpha, sym_embedding=None):
+  embedding = sym_embedding
 
+  gt_label = mx.symbol.Variable('softmax_label')
+  nembedding = mx.symbol.L2Normalization(embedding, mode='instance', name='fc1n')
+  anchor = mx.symbol.slice_axis(nembedding, axis=0, begin=0, end=batch_size//3)
+  positive = mx.symbol.slice_axis(nembedding, axis=0, begin=batch_size//3, end=2*batch_size//3)
+  negative = mx.symbol.slice_axis(nembedding, axis=0, begin=2*batch_size//3, end=batch_size)
+ 
+  ap = anchor - positive
+  an = anchor - negative
+  ap = ap*ap
+  an = an*an
+  ap = mx.symbol.sum(ap, axis=1, keepdims=1) #(T,1)
+  an = mx.symbol.sum(an, axis=1, keepdims=1) #(T,1)
+  triplet_loss = mx.symbol.Activation(data = (ap-an+alpha), act_type='relu')
+  triplet_loss = mx.symbol.mean(triplet_loss)
+  
+  triplet_loss = mx.symbol.MakeLoss(triplet_loss)
+  out_list = [mx.symbol.BlockGrad(embedding)]
+  out_list.append(mx.sym.BlockGrad(gt_label))
+  out_list.append(triplet_loss)
+  out = mx.symbol.Group(out_list)
+  return (out, arg_params, aux_params)
+
+if __name__ =="__main__":
+  parser = argparse.ArgumentParser(description='triplet image iter')
+  # general
+  # parser.add_argument('--data-dir', default='/data03/zhengmeisong/TrainData/test2w/train.rec', help='training set directory')
+  parser.add_argument('--data-dir', default='/data04/zhengmeisong/TrainData/glintv2_emore_ms1m_dl23W1f1_150WW1/train.rec')
+  parser.add_argument('--prefix', default='../model/model', help='directory to save model.')
+  parser.add_argument('--pretrained', default='../../model_r100_09_28/model-r100-triplet,2001', help='pretrained model to load')
+  parser.add_argument('--ckpt', type=int, default=3, help='checkpoint saving option. 0: discard saving. 1: save when necessary. 2: always save')
+  parser.add_argument('--network', default='r100', help='specify network')
+
+  parser.add_argument('--emb-size', type=int, default=512, help='embedding length')
+  parser.add_argument('--batch-size', type=int, default=12, help='batch size in each context')
+  parser.add_argument('--images-per-identity', type=int, default=5, help='')
+  parser.add_argument('--triplet-bag-size', type=int, default=1200, help='')
+  parser.add_argument('--triplet-alpha', type=float, default=0.3, help='')
+  parser.add_argument('--triplet-max-ap', type=float, default=0.0, help='')
+ 
+  parser.add_argument('--cutoff', type=int, default=0, help='')
+  args = parser.parse_args()
+  ctx = []
+  cvd = os.environ['CUDA_VISIBLE_DEVICES'].strip()
+  if len(cvd)>0:
+    for i in xrange(len(cvd.split(','))):
+      ctx.append(mx.gpu(i))
+  if len(ctx)==0:
+    ctx = [mx.cpu()]
+    print('use cpu')
+  else:
+    print('gpu num:', len(ctx))
+  args.ctx_num = len(ctx)
+
+  vec = args.pretrained.split(',')
+  print('loading', vec)
+  sym, arg_params, aux_params = mx.model.load_checkpoint(vec[0], int(vec[1]))
+  all_layers = sym.get_internals()
+  sym = all_layers['fc1_output']
+  sym, arg_params, aux_params = get_symbol(args, arg_params, aux_params, \
+                                args.batch_size, args.triplet_alpha, sym_embedding = sym)
+
+  data_extra = None
+  hard_mining = False
+  triplet_params = [args.triplet_bag_size, args.triplet_alpha, args.triplet_max_ap]
+  model = mx.mod.Module(
+      context       = ctx,
+      symbol        = sym,
+      label_names   = None
+  )
+  data_shape = (3,112,112)
+  test_dataiter = FaceImageIter(
+        batch_size           = args.batch_size,
+        data_shape           = data_shape,
+        path_imgrec          = args.data_dir,
+        shuffle              = True,
+        rand_mirror          = 0,
+        mean                 = None,
+        cutoff               = 0,
+        ctx_num              = args.ctx_num,
+        images_per_identity  = args.images_per_identity,
+        triplet_params       = triplet_params,
+        mx_model             = model,
+  )
+  provide_data  = test_dataiter.provide_data
+  provide_label = test_dataiter.provide_label
+  model.bind( data_shapes=provide_data, \
+    label_shapes=provide_label, for_training=False
+  )
+  model.set_params(arg_params, aux_params, allow_missing=True)
+  print(type(test_dataiter))
+  if not os.path.isdir('./tmp/'):
+    os.makedirs('./tmp/')
+  count = 0
+  while(True):
+    if(count>1):
+      break
+    test_dataiter.reset()
+    batchdata = test_dataiter.next()
+    
+    count+=1
+    print(type(batchdata))
+    data = batchdata.data
+    label = batchdata.label
+    print(type(data), len(data))
+    print(type(data[0]))
+    print(data[0].shape, label[0].shape)
+    b_data,b_label = data[0], label[0]
+    triplet_gap = int(args.batch_size/3)
+    for idx in range(triplet_gap):
+      a_img, p_img, n_img = b_data[idx],b_data[triplet_gap + idx],b_data[2*triplet_gap+idx]
+      # a_lab, p_lab, n_lab = b
+      imga = a_img.asnumpy().transpose( (1,2,0) )[...,::-1]
+      filename = './tmp/%05d_%03d'%(count,idx) + '_a.jpg'
+      cv2.imwrite(filename, imga)
+      imgp = p_img.asnumpy().transpose( (1,2,0) )[...,::-1]
+      filename = './tmp/%05d_%03d'%(count,idx) + '_p.jpg'
+      cv2.imwrite(filename, imgp)
+      imgn = n_img.asnumpy().transpose( (1,2,0) )[...,::-1]
+      filename = './tmp/%05d_%03d'%(count,idx)+ '_n.jpg'
+      cv2.imwrite(filename, imgn)
+    
+    # print(batchdata.shape)

@@ -123,15 +123,13 @@ class FaceImageIter(io.DataIter):
           self.triplet_mode = True
           self.triplet_cur = 0
           self.triplet_seq = []
-          self.triplet_reset()
+          self.triplet_reset()  #fill in self.triplet_seq
           self.seq_min_size = self.batch_size*2
         self.cur = 0
         self.nbatch = 0
         self.is_init = False
         self.times = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         #self.reset()
-
-
 
     def pairwise_dists(self, embeddings):
       nd_embedding_list = []
@@ -229,8 +227,6 @@ class FaceImageIter(io.DataIter):
         embeddings = None
         bag_size = self.triplet_bag_size
         batch_size = self.batch_size
-        #data = np.zeros( (bag_size,)+self.data_shape )
-        #label = np.zeros( (bag_size,) )
         tag = []
         #idx = np.zeros( (bag_size,) )
         print('eval %d images..'%bag_size, self.triplet_cur)
@@ -385,33 +381,7 @@ class FaceImageIter(io.DataIter):
           for i in xrange(self.images_per_identity):
             _idx = _list[i%len(_list)]
             self.seq.append(_idx)
-      #faiss_params = [20,5]
-      #quantizer = faiss.IndexFlatL2(d)  # the other index
-      #index = faiss.IndexIVFFlat(quantizer, d, faiss_params[0], faiss.METRIC_L2)
-      #assert not index.is_trained
-      #index.train(X)
-      #index.add(X)
-      #assert index.is_trained
-      #print('trained')
-      #index.nprobe = faiss_params[1]
-      #D, I = index.search(X, k)     # actual search
-      #print(I.shape)
-      #self.seq = []
-      #for i in xrange(I.shape[0]):
-      #  #assert I[i][0]==i
-      #  for j in xrange(k):
-      #    _label = I[i][j]
-      #    assert _label<len(self.id2range)
-      #    _id = self.header0[0]+_label
-      #    v = self.id2range[_id]
-      #    _list = range(*v)
-      #    if len(_list)<self.images_per_identity:
-      #      random.shuffle(_list)
-      #    else:
-      #      _list = np.random.choice(_list, self.images_per_identity, replace=False)
-      #    for i in xrange(self.images_per_identity):
-      #      _idx = _list[i%len(_list)]
-      #      self.seq.append(_idx)
+    
 
     def reset(self):
         """Resets the iterator to the beginning of the data."""
@@ -637,8 +607,6 @@ class FaceImageIterList(io.DataIter):
         continue
       return ret
 
-
-
 def get_symbol(args, arg_params, aux_params, batch_size, alpha, sym_embedding=None):
   embedding = sym_embedding
 
@@ -742,25 +710,30 @@ if __name__ =="__main__":
       break
       test_dataiter.reset()
       batchdata = test_dataiter.next()
+    
     count+=1
-    print(type(batchdata))
+    # print(type(batchdata))
     data = batchdata.data
     label = batchdata.label
-    print(type(data), len(data))
-    print(type(data[0]))
-    print(data[0].shape, label[0].shape)
+    # print(type(data), len(data))
+    # print(type(data[0]))
+    # print(data[0].shape, label[0].shape)
     b_data,b_label = data[0], label[0]
     triplet_gap = int(args.batch_size/3)
     for idx in range(triplet_gap):
-      a_img, p_img, n_img = b_data[idx],b_data[triplet_gap + idx],b_data[2*triplet_gap+idx]
-      # a_lab, p_lab, n_lab = b
+      a_img, p_img, n_img = b_data[idx],b_data[triplet_gap+idx],b_data[2*triplet_gap+idx]
+      a_lab, p_lab, n_lab = b_label[idx], b_label[triplet_gap+idx], b_label[2*triplet_gap+idx]
       imga = a_img.asnumpy().transpose( (1,2,0) )[...,::-1]
       filename = './tmp/%05d_%03d'%(count,idx) + '_a.jpg'
+      imga = cv2.putText(imga, "%.1f"%a_lab.asnumpy(), (0,50), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,255,0),2)
       cv2.imwrite(filename, imga)
       imgp = p_img.asnumpy().transpose( (1,2,0) )[...,::-1]
+      imgp = cv2.putText(imgp, "%.1f"%p_lab.asnumpy(), (0,50), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,255,0),2)
       filename = './tmp/%05d_%03d'%(count,idx) + '_p.jpg'
       cv2.imwrite(filename, imgp)
       imgn = n_img.asnumpy().transpose( (1,2,0) )[...,::-1]
+      imgn = cv2.putText(imgn, "%.1f"%n_lab.asnumpy(), (0,50), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,255,0),2)
       filename = './tmp/%05d_%03d'%(count,idx)+ '_n.jpg'
       cv2.imwrite(filename, imgn)
+      
     
