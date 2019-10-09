@@ -238,8 +238,6 @@ class FaceImageIter(io.DataIter):
         self.times[0] += self.time_elapsed()
         self.time_reset()
         #print(data.shape)
-        #data = np.zeros( (bag_size,)+self.data_shape )
-        #label = np.zeros( (bag_size,) )
         data = nd.zeros( self.provide_data[0][1] )
         label = None
         if self.provide_label is not None:
@@ -638,9 +636,9 @@ if __name__ =="__main__":
   parser = argparse.ArgumentParser(description='triplet image iter')
   # general
   # parser.add_argument('--data-dir', default='/data03/zhengmeisong/TrainData/test2w/train.rec', help='training set directory')
-  parser.add_argument('--data-dir', default='/data04/zhengmeisong/TrainData/glintv2_emore_ms1m_dl23f1/train.rec')
+  parser.add_argument('--data-dir', default='/data3/zhengmeisong/TrainData/casia/casia/train.rec')
   parser.add_argument('--prefix', default='../model/model', help='directory to save model.')
-  parser.add_argument('--pretrained', default='../../model_r100_09_30/model-r100-triplet,43', help='pretrained model to load')
+  parser.add_argument('--pretrained', default='../../model_r100_09_28/model-r100-triplet,2001', help='pretrained model to load')
   parser.add_argument('--ckpt', type=int, default=3, help='checkpoint saving option. 0: discard saving. 1: save when necessary. 2: always save')
   parser.add_argument('--network', default='r100', help='specify network')
 
