@@ -1,10 +1,12 @@
-DATA_DIR=/data04/zhengmeisong/TrainData/glintv2_emore_ms1m/
-NETWORK=p92
-MODELDIR="../../mx-models"
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-9.0/lib64
+DATA_DIR=/data/zhengmeisong/hpc13/TrainData/glintv2_emore_ms1m/
+NETWORK=p131
+MODELDIR=../../mx-models/${NETWORK}_`date +'%m_%d'`
+mkdir $MODELDIR
 PREFIX="$MODELDIR/model"
 CUDA_VISIBLE_DEVICES='0,1,2,3' python -u train_softmax.py --data-dir $DATA_DIR \
  --network "$NETWORK" \
- --loss-type 4 \
+ --loss-type 4 --ckpt 2\
  --margin-m 0.5 --lr 0.1 \
  --lr-step 80000,160000,240000,320000 \
  --emb-size 512 \
