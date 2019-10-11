@@ -157,7 +157,7 @@ if args.saveFP==1:
     print("save badcases in: ",saveRoot)
     if os.path.exists(saveRoot):
         shutil.rmtree(saveRoot)
-        os.mkdir(saveRoot)
+    os.mkdir(saveRoot)
     for idx, thr in enumerate(THRS):
         if idx ==0 or idx == 1:
             continue
@@ -199,6 +199,6 @@ if args.saveFP==1:
             fnw.write("%d\t%6.5f\t%s\t%s\n"%(pair_idx,score,idPath,facePath))
             shutil.copy(idPath, fnDir + str(pair_idx) + '_id.jpg')
             shutil.copy(facePath, fnDir + str(pair_idx) + '_face.jpg')
-           
+            
         fpw.close()
         fnw.close()
