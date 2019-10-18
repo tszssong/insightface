@@ -1,11 +1,10 @@
 import glob
 import numpy
-
 import os
-SDPath =  '/data3/zhengmeisong/data/jaTrain/'
-FDSets = ['imgs/','xxx']
+SDPath =  '/data03/zhengmeisong/TestData/JA-Test/'
+FDSets = ['JA-Test-Data/','xxx']
 
-fid = open('jaTrain.lst','w')
+fid = open('../imgs.lst','w')
 count=0
 
 imgSet = FDSets[0]
@@ -15,7 +14,7 @@ for idx2,imgID in enumerate(GatRoots):
         print(idx2)
     imgs=glob.glob(imgID+'/*.jpg')
     for imgName in imgs:
-        fid.write('1\t'+imgName+'\t%d\n'%count)
+        fid.write(imgName+' %d\n'%count)
     count=count+1
 
 fid.close()
