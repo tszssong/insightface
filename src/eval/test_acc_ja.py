@@ -133,7 +133,10 @@ def getFarValues(FARs,FARArry,TPRArry,AccArry,ThrArry):
     Thrs = ThrArry[minIdxs]
     ACCs = AccArry[minIdxs]
     print(args.model)
-    txtname = args.model.split(',')[0]+'-%04d'%int(args.model.split(',')[-1]) + '_ja.txt'
+    if '_rmd' in args.idListFile:
+        txtname = args.model.split(',')[0]+'-%04d'%int(args.model.split(',')[-1]) + '_ja_rmd.txt'
+    else:
+        txtname = args.model.split(',')[0]+'-%04d'%int(args.model.split(',')[-1]) + '_ja.txt'
     with open(txtname, 'w') as fw:
         fw.write(args.model + '\n')
         for idx,far in enumerate(FARs):
