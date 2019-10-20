@@ -12,18 +12,14 @@ from mxnet import ndarray as nd
 
 parser = argparse.ArgumentParser(description='get model')
 parser.add_argument('--image-size', default='112,112', help='')
-#model_str = "/data03/zhengmeisong/wkspace/FR/model/model-G50-triplet-dl23W1f1_150W1_V2/model,106"
-model_str = "../../../model_r100_09_28/model-r100-triplet,1"
-model_str = "/data03/zhengmeisong/wkspace/FR/model-r100-ii/model,0"
-model_str = "/data03/zhengmeisong/wkspace/FR/model_r100_09_30/model-r100-triplet,66"
+model_str = "../../../mx-model/model_r100_10_06/model,4"
 parser.add_argument('--model', default=model_str, help='path to load model.')
-parser.add_argument('--gpu', default=1, type=int, help='gpu id')
+parser.add_argument('--gpu', default=2, type=int, help='gpu id')
 parser.add_argument('--det', default=0, type=int, help='mtcnn option, 2 means using R+O, else using O')
 parser.add_argument('--flip', default=0, type=int, help='whether do lr flip aug')
 parser.add_argument('--threshold', default=1.24, type=float, help='ver dist threshold')
 parser.add_argument('--ftname', type=str, default='.ft')
-parser.add_argument('--imlist', type=str, default='../../../../../TestData/CASIA-IvS-Test/CASIA-IvS-Test-final-v3-revised.lst')
-#parser.add_argument('--imlist', type=str, default='//data03/zhengmeisong/TestData/JA-Test/imgs.lst')
+parser.add_argument('--imlist', type=str, default='/cloud_data01/StrongRootData/TestData/JA-Test/imgs.lst')
 
 args = parser.parse_args()
 

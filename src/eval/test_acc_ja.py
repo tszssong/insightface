@@ -156,9 +156,11 @@ THRS=getFarValues(FARs,FARArry,TPRArry,AccArry,ThrArry)
 idList = open(idListPath, 'r').readlines()
 faceList = open(faceListPath, 'r').readlines()
 if args.saveFP==1:
-    if os.path.exists("./log/"):
-        shutil.rmtree("./log/")
-        os.mkdir("./log/")
+    saveRoot = './tmp_' + args.model.split(',')[-1] +'/'
+    print("save badcases in: ",saveRoot)
+    if os.path.exists(saveRoot):
+        shutil.rmtree(saveRoot)
+    os.mkdir(saveRoot)
     for idx, thr in enumerate(THRS):
         if idx ==0 or idx == 1:
             continue
@@ -166,10 +168,10 @@ if args.saveFP==1:
         fn_pair_idxs = getFalseNegatives(fScores, fLabels,thr)
         # print(fp_pair_idxs, fn_pair_idxs)
         print(thr,'fpairs',len(fp_pair_idxs),'npairs', len(fn_pair_idxs))
-        fpName = './log/fpIdx_%d.txt'%idx
-        fnName = './log/fnIdx_%d.txt'%idx
-        fpDir  = './log/fpIdx_%d'%idx +'/'
-        fnDir  = './log/fnIdx_%d'%idx +'/'
+        fpName = saveRoot + '/fpIdx_%d.txt'%idx
+        fnName = saveRoot + '/fnIdx_%d.txt'%idx
+        fpDir  = saveRoot + '/fpIdx_%d'%idx +'/'
+        fnDir  = saveRoot + '/fnIdx_%d'%idx +'/'
         if not os.path.exists(fpDir):
             os.mkdir(fpDir)
         if not os.path.exists(fnDir):
@@ -200,6 +202,6 @@ if args.saveFP==1:
             fnw.write("%d\t%6.5f\t%s\t%s\n"%(pair_idx,score,idPath,facePath))
             shutil.copy(idPath, fnDir + str(pair_idx) + '_id.jpg')
             shutil.copy(facePath, fnDir + str(pair_idx) + '_face.jpg')
-           
+            
         fpw.close()
         fnw.close()
