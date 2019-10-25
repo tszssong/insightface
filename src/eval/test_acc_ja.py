@@ -11,6 +11,7 @@ parser.add_argument('--imgRoot', help = 'imgRoot')
 parser.add_argument('--idListFile', help = 'idFile')
 parser.add_argument('--faceListFile', help = 'faceFile')
 parser.add_argument('--ftRoot', help = 'featRoot')
+parser.add_argument('--ftSize', type=int, default=512, help = 'featureSize')
 parser.add_argument('--model', default= 'None', help='model path')
 parser.add_argument('--saveFP', type = int, default = 1)
 FARs=[1e-2,1e-3,1e-4,1e-5,1e-6,1e-7,1e-8]
@@ -24,7 +25,7 @@ def loadFeatureFromModelDir(idListFile, faceListFile,  ftExt = '.arc'):
 
     idList = open(idListFile, 'r').readlines()
     idLabel = np.zeros([len(idList)], dtype = np.int32)
-    idFeat = np.zeros([len(idList), 512],dtype = np.float32)
+    idFeat = np.zeros([len(idList), args.ftSize],dtype = np.float32)
     for idx,line in enumerate(idList):
         ftName =line.split(' ')[0][:-4]+ftExt
         if not ftDir==None:
@@ -38,7 +39,7 @@ def loadFeatureFromModelDir(idListFile, faceListFile,  ftExt = '.arc'):
     
     faceList = open(faceListFile, 'r').readlines()
     faceLabel = np.zeros([len(faceList)], dtype = np.int32)
-    faceFeat = np.zeros([len(faceList), 512],dtype = np.float32)
+    faceFeat = np.zeros([len(faceList), args.ftSize],dtype = np.float32)
     for idx,line in enumerate(faceList):
         ftName =line.split(' ')[0][:-4]+ftExt
         if not ftDir==None:
