@@ -9,6 +9,7 @@ import sklearn
 from sklearn import preprocessing
 import mxnet as mx
 from mxnet import ndarray as nd
+import time
 
 parser = argparse.ArgumentParser(description='get model')
 parser.add_argument('--image-size', default='112,112', help='')
@@ -39,6 +40,7 @@ def get_feature_model(imglist, modelpath, image_size):
     model = mx.mod.Module(symbol=sym, context=ctx, label_names = None)
     model.bind(data_shapes=[('data', (1, 3, image_size[0], image_size[1]))])
     model.set_params(arg_params, aux_params)
+    forwardTime = 0
     with open(imglist) as f:
         lines = f.readlines()
         count = 0
@@ -56,13 +58,14 @@ def get_feature_model(imglist, modelpath, image_size):
             aligned = np.transpose(nimg2, (2,0,1))
             input_blob = np.expand_dims(aligned, axis=0)
             data = mx.nd.array(input_blob)
+            start = time.time()
             db = mx.io.DataBatch(data=(data,))
             model.forward(db, is_train=False)
+            end = time.time()
+            forwardTime += (end-start)
             _embedding = model.get_outputs()[0].asnumpy()
             embedding =  sklearn.preprocessing.normalize(_embedding) #.flatten()
-            # print(embedding.size)
             subRoot = imgPath.split('/')[-2] + '/'
-            # print(subRoot)
             if not os.path.isdir(saveRoot+subRoot):
                 os.makedirs(saveRoot+subRoot)
             feaPath = saveRoot+subRoot+imgPath.split('/')[-1].replace('.jpg',args.ftname)
@@ -70,8 +73,10 @@ def get_feature_model(imglist, modelpath, image_size):
             count += 1
             if count % 100 == 0:
                 print('%d. '%count),
+                print("%.3f ms, total=%.3f s, average=%.3f ms"%((end-start)*1000, forwardTime, forwardTime*1000/count))
                 # print('.'),
                 sys.stdout.flush()
+        print("total time: %.2f, per time: %.2f"%(forwardTime, forwardTime/count))
 
 if __name__=='__main__':
     image_size = [int(i) for i in args.image_size.split(',')]

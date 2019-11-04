@@ -160,6 +160,9 @@ def get_symbol(num_classes, num_layers, **kwargs):
     elif num_layers == 161:
         units = [6, 12, 36, 24]
         growth_rate = 48
+    elif num_layers == 290:
+        units = [6, 12, 70, 54]
+        growth_rate = 48
     else:
         raise ValueError("no experiments done on num_layers {}, you can do it yourself".format(num_layers))
     num_unit = len(units)
