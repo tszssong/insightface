@@ -11,6 +11,7 @@ parser.add_argument('--imgRoot', help = 'imgRoot')
 parser.add_argument('--idListFile', help = 'idFile')
 parser.add_argument('--faceListFile', help = 'faceFile')
 parser.add_argument('--ftRoot', help = 'featRoot')
+parser.add_argument('--ftSize', type=int, default=512, help = 'featureSize')
 parser.add_argument('--model', default= 'None', help='model path')
 parser.add_argument('--saveFP', type = int, default = 1)
 FARs=[1e-2,1e-3,1e-4,1e-5,1e-6,1e-7,1e-8]
@@ -24,7 +25,7 @@ def loadFeatureFromModelDir(idListFile, faceListFile,  ftExt = '.arc'):
 
     idList = open(idListFile, 'r').readlines()
     idLabel = np.zeros([len(idList)], dtype = np.int32)
-    idFeat = np.zeros([len(idList), 512],dtype = np.float32)
+    idFeat = np.zeros([len(idList), args.ftSize],dtype = np.float32)
     for idx,line in enumerate(idList):
         ftName =line.split(' ')[0][:-4]+ftExt
         if not ftDir==None:
@@ -38,7 +39,7 @@ def loadFeatureFromModelDir(idListFile, faceListFile,  ftExt = '.arc'):
     
     faceList = open(faceListFile, 'r').readlines()
     faceLabel = np.zeros([len(faceList)], dtype = np.int32)
-    faceFeat = np.zeros([len(faceList), 512],dtype = np.float32)
+    faceFeat = np.zeros([len(faceList), args.ftSize],dtype = np.float32)
     for idx,line in enumerate(faceList):
         ftName =line.split(' ')[0][:-4]+ftExt
         if not ftDir==None:
@@ -133,7 +134,10 @@ def getFarValues(FARs,FARArry,TPRArry,AccArry,ThrArry):
     Thrs = ThrArry[minIdxs]
     ACCs = AccArry[minIdxs]
     print(args.model)
-    txtname = args.model.split(',')[0]+'-%04d'%int(args.model.split(',')[-1]) + '_ja.txt'
+    if '_rmd' in args.idListFile:
+        txtname = args.model.split(',')[0]+'-%04d'%int(args.model.split(',')[-1]) + '_ja_rmd.txt'
+    else:
+        txtname = args.model.split(',')[0]+'-%04d'%int(args.model.split(',')[-1]) + '_ja.txt'
     with open(txtname, 'w') as fw:
         fw.write(args.model + '\n')
         for idx,far in enumerate(FARs):
@@ -153,9 +157,11 @@ THRS=getFarValues(FARs,FARArry,TPRArry,AccArry,ThrArry)
 idList = open(idListPath, 'r').readlines()
 faceList = open(faceListPath, 'r').readlines()
 if args.saveFP==1:
-    if os.path.exists("./log/"):
-        shutil.rmtree("./log/")
-        os.mkdir("./log/")
+    saveRoot = './tmp_' + args.model.split(',')[-1] +'/'
+    print("save badcases in: ",saveRoot)
+    if os.path.exists(saveRoot):
+        shutil.rmtree(saveRoot)
+    os.mkdir(saveRoot)
     for idx, thr in enumerate(THRS):
         if idx ==0 or idx == 1:
             continue
@@ -163,10 +169,10 @@ if args.saveFP==1:
         fn_pair_idxs = getFalseNegatives(fScores, fLabels,thr)
         # print(fp_pair_idxs, fn_pair_idxs)
         print(thr,'fpairs',len(fp_pair_idxs),'npairs', len(fn_pair_idxs))
-        fpName = './log/fpIdx_%d.txt'%idx
-        fnName = './log/fnIdx_%d.txt'%idx
-        fpDir  = './log/fpIdx_%d'%idx +'/'
-        fnDir  = './log/fnIdx_%d'%idx +'/'
+        fpName = saveRoot + '/fpIdx_%d.txt'%idx
+        fnName = saveRoot + '/fnIdx_%d.txt'%idx
+        fpDir  = saveRoot + '/fpIdx_%d'%idx +'/'
+        fnDir  = saveRoot + '/fnIdx_%d'%idx +'/'
         if not os.path.exists(fpDir):
             os.mkdir(fpDir)
         if not os.path.exists(fnDir):
@@ -197,6 +203,6 @@ if args.saveFP==1:
             fnw.write("%d\t%6.5f\t%s\t%s\n"%(pair_idx,score,idPath,facePath))
             shutil.copy(idPath, fnDir + str(pair_idx) + '_id.jpg')
             shutil.copy(facePath, fnDir + str(pair_idx) + '_face.jpg')
-           
+            
         fpw.close()
         fnw.close()
