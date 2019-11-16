@@ -243,9 +243,9 @@ def train_net(args):
       sym, arg_params, aux_params = get_symbol(args, arg_params, aux_params, sym_embedding = sym)
 
     assert len(args.supermodel) > 0
-    supervec = args.pretrained.split(',')
+    supervec = args.supermodel.split(',')
     print('loading', supervec)
-    super_sym, super_arg_params, super_aux_params = mx.model.load_checkpoint(vec[0], int(vec[1]))
+    super_sym, super_arg_params, super_aux_params = mx.model.load_checkpoint(supervec[0], int(supervec[1]))
     super_all_layers = super_sym.get_internals()
     super_sym = super_all_layers['fc1_output']
     super_model = mx.mod.Module(symbol=super_sym, context=ctx)
