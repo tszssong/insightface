@@ -29,6 +29,7 @@ import fdensenet
 import fdpn
 import fnasnet
 import spherenet
+import vargfacenet
 #import lfw
 import verification
 import sklearn
@@ -129,6 +130,9 @@ def get_symbol(args, arg_params, aux_params, sym_embedding=None):
     elif args.network[0]=='s':
       print('init spherenet', args.num_layers)
       embedding = spherenet.get_symbol(args.emb_size, args.num_layers)
+    elif args.network[0]=='v':
+      print('init vargfacenet', args.num_layers)
+      embedding = vargfacenet.get_symbol(args.emb_size, args.num_layers)
     else:
       print('init resnet', args.num_layers)
       embedding = fresnet.get_symbol(args.emb_size, args.num_layers, 
