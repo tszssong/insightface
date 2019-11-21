@@ -24,6 +24,7 @@ import finception_resnet_v2
 import fmobilenet 
 import fmobilenetv2
 import fmobilefacenet
+import vargfacenet
 import fxception
 import fdensenet
 import fdpn
@@ -174,6 +175,9 @@ def get_symbol(args, arg_params, aux_params):
   elif args.network[0]=='y':
     print('init mobilefacenet', args.num_layers)
     embedding = fmobilefacenet.get_symbol(args.emb_size, bn_mom = args.bn_mom, version_output=args.version_output)
+  elif args.network[0]=='v':
+      print('init vargfacenet', args.num_layers)
+      embedding = vargfacenet.get_symbol()
   else:
     print('init resnet', args.num_layers)
     embedding = fresnet.get_symbol(args.emb_size, args.num_layers, 

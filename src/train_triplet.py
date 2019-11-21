@@ -132,7 +132,7 @@ def get_symbol(args, arg_params, aux_params, sym_embedding=None):
       embedding = spherenet.get_symbol(args.emb_size, args.num_layers)
     elif args.network[0]=='v':
       print('init vargfacenet', args.num_layers)
-      embedding = vargfacenet.get_symbol(args.emb_size, args.num_layers)
+      embedding = vargfacenet.get_symbol()
     else:
       print('init resnet', args.num_layers)
       embedding = fresnet.get_symbol(args.emb_size, args.num_layers, 
