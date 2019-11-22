@@ -12,5 +12,7 @@ CUDA_VISIBLE_DEVICES='0,1' python -u train_softmax.py --data-dir $DATA_DIR \
  --emb-size 512 \
  --prefix "$PREFIX" --per-batch-size 256 --color 1 \
  2>&1 | tee ../../mx-logs/${NETWORK}_`date +'%m_%d-%H_%M_%S'`.log
+
+# 以上配置单卡320不收敛
  
 
