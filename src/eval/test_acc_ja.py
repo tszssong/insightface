@@ -134,8 +134,8 @@ def getFarValues(FARs,FARArry,TPRArry,AccArry,ThrArry):
     Thrs = ThrArry[minIdxs]
     ACCs = AccArry[minIdxs]
     print(args.model)
-    if '_rmd' in args.idListFile:
-        txtname = args.model.split(',')[0]+'-%04d'%int(args.model.split(',')[-1]) + '_ja_rmd.txt'
+    if 'Rev' in args.imgRoot:
+        txtname = args.model.split(',')[0]+'-%04d'%int(args.model.split(',')[-1]) + '_ja_rev.txt'
     else:
         txtname = args.model.split(',')[0]+'-%04d'%int(args.model.split(',')[-1]) + '_ja.txt'
     with open(txtname, 'w') as fw:
@@ -163,7 +163,7 @@ if args.saveFP==1:
         shutil.rmtree(saveRoot)
     os.mkdir(saveRoot)
     for idx, thr in enumerate(THRS):
-        if idx ==0 or idx == 1:
+        if idx <=3:
             continue
         fp_pair_idxs  = getFalsePositives(fScores, fLabels,thr)
         fn_pair_idxs = getFalseNegatives(fScores, fLabels,thr)
