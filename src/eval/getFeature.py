@@ -9,7 +9,7 @@ import sklearn
 from sklearn import preprocessing
 import mxnet as mx
 from mxnet import ndarray as nd
-import time
+import time,datetime
 
 parser = argparse.ArgumentParser(description='get model')
 parser.add_argument('--image-size', default='112,112', help='')
@@ -58,13 +58,15 @@ def get_feature_model(imglist, modelpath, image_size):
             aligned = np.transpose(nimg2, (2,0,1))
             input_blob = np.expand_dims(aligned, axis=0)
             data = mx.nd.array(input_blob)
+
             start = time.time()
             db = mx.io.DataBatch(data=(data,))
             model.forward(db, is_train=False)
+            _embedding = model.get_outputs()[0].asnumpy()
             end = time.time()
             forwardTime += (end-start)
-            _embedding = model.get_outputs()[0].asnumpy()
             embedding =  sklearn.preprocessing.normalize(_embedding) #.flatten()
+
             subRoot = imgPath.split('/')[-2] + '/'
             if not os.path.isdir(saveRoot+subRoot):
                 os.makedirs(saveRoot+subRoot)
