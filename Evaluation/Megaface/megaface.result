@@ -1,0 +1,65 @@
+hpc13:with augment:
+Done matching! Score matrix size: 3530 1000000
+Saving to ../../mx_results/otherFiles/facescrub_megaface_py_r50_1000000_1.bin
+Computing test results with 1000000 images for set 1
+Loaded 3530 probes spanning 80 classes
+Loading from ../../mx_results/otherFiles/facescrub_facescrub_py_r50.bin
+Probe score matrix size: 3530 3530
+distractor score matrix size: 3530 1000000
+Done loading. Time to compute some stats!
+Finding top distractors!
+Done sorting distractor scores
+Making gallery!
+Done Making Gallery!
+Allocating ranks (1000080)
+Rank 1: 0.958134
+/home/ubuntu/zms/wkspace/FR/myInsightface/Evaluation/Megaface
+
+hpc36:with out augment
+Done matching! Score matrix size: 3530 1000000
+Saving to ../../mx_results/otherFiles/facescrub_megaface_py1_r50_1000000_1.bin
+Computing test results with 1000000 images for set 1
+Loaded 3530 probes spanning 80 classes
+Loading from ../../mx_results/otherFiles/facescrub_facescrub_py1_r50.bin
+Probe score matrix size: 3530 3530
+distractor score matrix size: 3530 1000000
+Done loading. Time to compute some stats!
+Finding top distractors!
+Done sorting distractor scores
+Making gallery!
+Done Making Gallery!
+Allocating ranks (1000080)
+Rank 1: 0.948807
+
+model-r50-am-lfw
+Done matching! Score matrix size: 3530 1000000
+Saving to ../../mx_results/otherFiles/facescrub_megaface_r50_1000000_1.bin
+Computing test results with 1000000 images for set 1
+Loaded 3530 probes spanning 80 classes
+Loading from ../../mx_results/otherFiles/facescrub_facescrub_r50.bin
+Probe score matrix size: 3530 3530
+distractor score matrix size: 3530 1000000
+Done loading. Time to compute some stats!
+Finding top distractors!
+Done sorting distractor scores
+Making gallery!
+Done Making Gallery!
+Allocating ranks (1000080)
+Rank 1: 0.972604
+
+m1:
+Done matching! Score matrix size: 3530 1000000
+Saving to ../../mx_results/otherFiles/facescrub_megaface_m1_1000000_1.bin
+Computing test results with 1000000 images for set 1
+Loaded 3530 probes spanning 80 classes
+Loading from ../../mx_results/otherFiles/facescrub_facescrub_m1.bin
+Probe score matrix size: 3530 3530
+distractor score matrix size: 3530 1000000
+Done loading. Time to compute some stats!
+Finding top distractors!
+Done sorting distractor scores
+Making gallery!
+Done Making Gallery!
+Allocating ranks (1000080)
+Rank 1: 0.743533
+
