@@ -21,7 +21,7 @@ from mxnet import ndarray as nd
 
 
 def read_img(image_path):
-  img = cv2.imread(image_path, cv2.IMREAD_COLOR)
+  img = cv2.imread(image_path)
   return img
 
 def get_feature(imgs, nets):
@@ -75,6 +75,7 @@ def main(args):
   print(args)
   gpuid = args.gpu
   ctx = mx.gpu(gpuid)
+  ctx = mx.cpu()
   nets = []
   image_shape = [int(x) for x in args.image_size.split(',')]
   for model in args.model.split('|'):
@@ -170,7 +171,7 @@ def parse_arguments(argv):
   parser.add_argument('--megaface-lst', type=str, help='', default='./data/megaface_lst')
   parser.add_argument('--facescrub-root', type=str, help='', default='./data/facescrub_images')
   parser.add_argument('--megaface-root', type=str, help='', default='./data/megaface_images')
-  parser.add_argument('--output', type=str, help='', default='/ai_data/zhengmeisong/TestData/fea_out/')
+  parser.add_argument('--output', type=str, help='', default='./feature_out')
   parser.add_argument('--model', type=str, help='', default='')
   return parser.parse_args(argv)
 

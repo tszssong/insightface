@@ -12,9 +12,6 @@ import numpy as np
 import argparse
 import struct
 import cv2
-import mxnet as mx
-from mxnet import ndarray as nd
-
 
 feature_dim = 512
 feature_ext = 1
@@ -146,8 +143,8 @@ def parse_arguments(argv):
   parser.add_argument('--algo', type=str, help='', default='insightface')
   parser.add_argument('--facescrub-lst', type=str, help='', default='./data/facescrub_lst')
   parser.add_argument('--megaface-lst', type=str, help='', default='./data/megaface_lst')
-  parser.add_argument('--feature-dir-input', type=str, help='', default='./fea_out')
-  parser.add_argument('--feature-dir-out', type=str, help='', default='/ai_data/zhengmeisong/TestData/fea_out_clean')
+  parser.add_argument('--feature-dir-input', type=str, help='', default='./feature_out')
+  parser.add_argument('--feature-dir-out', type=str, help='', default='./feature_out_clean')
   return parser.parse_args(argv)
 
 if __name__ == '__main__':

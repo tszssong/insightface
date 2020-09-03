@@ -175,7 +175,7 @@ def parse_arguments(argv):
   parser.add_argument('--megaface-lst', type=str, help='', default='./data/megaface_lst')
   parser.add_argument('--facescrub-root', type=str, help='', default='./data/facescrub_images')
   parser.add_argument('--megaface-root', type=str, help='', default='./data/megaface_images')
-  parser.add_argument('--output', type=str, help='', default='/ai_data/zhengmeisong/TestData/fea_out/')
+  parser.add_argument('--output', type=str, help='', default='./feature_out/')
   parser.add_argument('--model', type=str, help='', default='./IR_50/IR_50_E_23_B1639361_T1912290832.pth')
   return parser.parse_args(argv)
 
